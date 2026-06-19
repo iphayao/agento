@@ -44,7 +44,7 @@ Requirements:
 3. Create docs/local-dev.md.
 4. Create docs/implementation-roadmap.md.
 5. Create Docker Compose for PostgreSQL, Redis, and MinIO.
-6. Add .env.example files for agento-web, api, and agento-worker.
+6. Add .env.example files for agento-web, agento-api, and agento-worker.
 7. Add placeholder README.md files in important folders.
 8. Add .gitignore.
 9. Do not implement business logic yet.
