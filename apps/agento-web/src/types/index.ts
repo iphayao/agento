@@ -147,6 +147,7 @@ export interface AgentWorkflow {
 }
 
 export const AGENT_STEP_LABELS: Record<string, string> = {
+  retrieval: "Knowledge Retrieval",
   brand_strategist: "Brand Strategist",
   customer_insight: "Customer Insight",
   content_writer: "Content Writer",
@@ -156,12 +157,90 @@ export const AGENT_STEP_LABELS: Record<string, string> = {
 };
 
 export const AGENT_STEPS = [
+  "retrieval",
   "brand_strategist",
   "customer_insight",
   "content_writer",
   "claim_compliance",
   "editor",
   "final_formatter",
+];
+
+// ── Knowledge Base ──────────────────────────────────────────────────────────
+
+export type DocumentType =
+  | "BRAND_GUIDELINE"
+  | "PRODUCT_FACT"
+  | "APPROVED_CLAIM"
+  | "PROHIBITED_CLAIM"
+  | "CUSTOMER_REVIEW"
+  | "WINNING_CONTENT"
+  | "COMPETITOR_NOTE"
+  | "MARKET_INSIGHT";
+
+export type DocumentStatus = "ACTIVE" | "ARCHIVED";
+
+export interface KnowledgeDocument {
+  id: string;
+  title: string;
+  type: DocumentType;
+  content: string;
+  source?: string;
+  tags: string[];
+  status: DocumentStatus;
+  chunkCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface KnowledgeDocumentRequest {
+  title: string;
+  type: DocumentType;
+  content: string;
+  source?: string;
+  tags: string[];
+}
+
+export interface KnowledgeChunk {
+  id: string;
+  documentId: string;
+  chunkIndex: number;
+  chunkText: string;
+  hasEmbedding: boolean;
+  createdAt: string;
+}
+
+export interface KnowledgeSearchRequest {
+  query: string;
+  documentType?: DocumentType;
+  topK?: number;
+  minScore?: number;
+}
+
+export interface KnowledgeSearchResult {
+  query: string;
+  results: KnowledgeChunkMatch[];
+}
+
+export interface KnowledgeChunkMatch {
+  chunkId: string;
+  documentId: string;
+  documentTitle: string;
+  documentType: string;
+  chunkText: string;
+  score: number;
+  chunkIndex: number;
+}
+
+export const DOCUMENT_TYPES: { value: DocumentType; label: string }[] = [
+  { value: "BRAND_GUIDELINE", label: "Brand Guideline" },
+  { value: "PRODUCT_FACT", label: "Product Fact" },
+  { value: "APPROVED_CLAIM", label: "Approved Claim" },
+  { value: "PROHIBITED_CLAIM", label: "Prohibited Claim" },
+  { value: "CUSTOMER_REVIEW", label: "Customer Review" },
+  { value: "WINNING_CONTENT", label: "Winning Content" },
+  { value: "COMPETITOR_NOTE", label: "Competitor Note" },
+  { value: "MARKET_INSIGHT", label: "Market Insight" },
 ];
 
 export const CAMPAIGN_STATUSES = [

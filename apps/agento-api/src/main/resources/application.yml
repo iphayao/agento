@@ -41,6 +41,14 @@ agento:
     max-tokens: ${AI_MAX_TOKENS:2000}
     connect-timeout-seconds: ${AI_CONNECT_TIMEOUT:5}
     read-timeout-seconds: ${AI_READ_TIMEOUT:60}
+  embedding:
+    provider: ${EMBEDDING_PROVIDER:openai}
+    model: ${EMBEDDING_MODEL:text-embedding-ada-002}
+    api-key: ${EMBEDDING_API_KEY:${AI_API_KEY:}}
+    base-url: ${EMBEDDING_BASE_URL:https://api.openai.com/v1}
+    dimensions: ${EMBEDDING_DIMENSIONS:1536}
+    connect-timeout-seconds: ${EMBEDDING_CONNECT_TIMEOUT:5}
+    read-timeout-seconds: ${EMBEDDING_READ_TIMEOUT:30}
 
 logging:
   level:

@@ -13,6 +13,7 @@ const navLinks = [
   { href: "/products", label: "Products" },
   { href: "/campaigns", label: "Campaigns" },
   { href: "/content", label: "Content Review" },
+  { href: "/knowledge", label: "Knowledge Base" },
 ];
 
 export default function RootLayout({
@@ -42,7 +43,7 @@ export default function RootLayout({
               ))}
             </nav>
             <div className="p-3 border-t border-gray-200">
-              <div className="text-xs text-gray-400">Phase 01 — MVP</div>
+              <div className="text-xs text-gray-400">Phase 03 — Brand Memory</div>
             </div>
           </aside>
 

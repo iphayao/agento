@@ -20,6 +20,7 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_ex
 from app import cancellation
 from app.callback import notify_step
 from app.config import settings
+from app.retrieval import retrieve_knowledge, empty_context, format_section
 from app.workflow.state import WorkflowState
 
 logger = logging.getLogger(__name__)
@@ -167,7 +168,57 @@ async def _should_skip(state: WorkflowState, step: str) -> bool:
     return False
 
 
+# ─── RAG helpers ───────────────────────────────────────────────────────────────
+
+def _rag(state: WorkflowState) -> dict:
+    """Return retrieved_knowledge dict, falling back to empty context."""
+    return state.get("retrieved_knowledge") or empty_context()
+
+
 # ─── Node functions ────────────────────────────────────────────────────────────
+
+async def retrieval_node(state: WorkflowState) -> dict:
+    """Step 0: Retrieve relevant brand knowledge from the knowledge base via RAG.
+
+    Failure is non-critical — the workflow continues with empty context.
+    """
+    step = "retrieval"
+    wf_id = state["workflow_id"]
+    base_url = state["callback_base_url"]
+    api_key = state["callback_api_key"]
+
+    if cancellation.is_cancelled(wf_id):
+        await notify_step(base_url, api_key, wf_id, step, "SKIPPED")
+        return {**state, "current_step": step, "retrieved_knowledge": empty_context()}
+
+    await notify_step(base_url, api_key, wf_id, step, "RUNNING")
+
+    campaign = state["campaign"]
+    query = " ".join(filter(None, [
+        campaign.get("name", ""),
+        campaign.get("objective", ""),
+        campaign.get("contentAngle", ""),
+        campaign.get("targetAudience", ""),
+    ]))
+
+    try:
+        knowledge = await retrieve_knowledge(
+            base_url=base_url,
+            api_key=api_key,
+            query=query,
+            top_k=10,
+        )
+        total = sum(len(v) for v in knowledge.values())
+        active_cats = sum(1 for v in knowledge.values() if v)
+        msg = f"Retrieved {total} chunks across {active_cats} knowledge categories"
+        await notify_step(base_url, api_key, wf_id, step, "COMPLETED", output=msg)
+        return {**state, "retrieved_knowledge": knowledge, "current_step": step}
+    except Exception as exc:
+        logger.warning("Retrieval failed (non-critical): %s", exc)
+        await notify_step(base_url, api_key, wf_id, step, "COMPLETED",
+                          output="No knowledge retrieved — knowledge base may be empty")
+        return {**state, "retrieved_knowledge": empty_context(), "current_step": step}
+
 
 async def brand_strategist_node(state: WorkflowState) -> dict:
     """Step 1: Produce a campaign strategy brief."""
@@ -183,9 +234,13 @@ async def brand_strategist_node(state: WorkflowState) -> dict:
 
     await notify_step(base_url, api_key, wf_id, step, "RUNNING")
 
+    rag = _rag(state)
     system = f"""You are a senior brand strategist for a Thai FMCG company.
 {_brand_context(state['brand'])}
 {CLAIM_SAFETY_RULES}
+{format_section(rag['brand_guidelines'], 'Brand Guidelines')}
+{format_section(rag['market_insights'], 'Market Insights')}
+{format_section(rag['competitor_notes'], 'Competitor Notes')}
 Respond ONLY with valid JSON: {{"strategyBrief": "string (2-3 paragraphs)"}}"""
 
     campaign = state["campaign"]
@@ -226,9 +281,12 @@ async def customer_insight_node(state: WorkflowState) -> dict:
     await notify_step(base_url, api_key, wf_id, step, "RUNNING")
 
     campaign = state["campaign"]
+    rag = _rag(state)
     system = f"""You are a customer insight researcher for Thai consumer markets.
 {_brand_context(state['brand'])}
 Strategy brief: {state.get('strategy_brief', '')}
+{format_section(rag['customer_reviews'], 'Real Customer Reviews')}
+{format_section(rag['market_insights'], 'Market Insights')}
 Respond ONLY with valid JSON:
 {{"painPoints": ["string"], "triggers": ["string"], "messagingPillars": ["string"]}}"""
 
@@ -272,12 +330,16 @@ async def content_writer_node(state: WorkflowState) -> dict:
 
     campaign = state["campaign"]
     channel = campaign.get("channel", "tiktok")
+    rag = _rag(state)
 
     system = f"""You are a Thai marketing content writer.
 {_brand_context(state['brand'])}
 Products: {_product_context(state['products'])}
 Customer insights: {state.get('customer_insights', '')}
 {CLAIM_SAFETY_RULES}
+{format_section(rag['winning_content'], 'Winning Content Examples (for inspiration only, do not copy)')}
+{format_section(rag['approved_claims'], 'Approved Claims (safe to use)')}
+{format_section(rag['product_facts'], 'Product Facts')}
 
 Write content suitable for: {channel}
 Respond ONLY with valid JSON:
@@ -334,9 +396,12 @@ async def claim_compliance_node(state: WorkflowState) -> dict:
     # Server-side term check (deterministic, no LLM needed)
     server_warnings = find_prohibited_terms(full_text)
 
+    rag = _rag(state)
     # LLM also reviews for subtle compliance issues
     system = f"""You are a compliance reviewer for Thai marketing content.
 {CLAIM_SAFETY_RULES}
+{format_section(rag['prohibited_claims'], 'Additional Prohibited Claims from Brand Memory')}
+{format_section(rag['approved_claims'], 'Approved Claims (safe to use)')}
 Your task: review the content below and flag any prohibited terms or unsafe claims.
 Respond ONLY with valid JSON:
 {{"isSafe": boolean, "prohibitedTermsFound": ["string"], "suggestedRevisions": ["string"]}}"""
@@ -399,9 +464,11 @@ async def editor_node(state: WorkflowState) -> dict:
     warnings = compliance.get("warnings", [])
     revisions = compliance.get("suggestedRevisions", [])
 
+    rag = _rag(state)
     system = f"""You are a senior content editor for a Thai FMCG brand.
 {_brand_context(state['brand'])}
 {CLAIM_SAFETY_RULES}
+{format_section(rag['brand_guidelines'], 'Brand Voice Guidelines')}
 
 Your task: refine the content draft to:
 1. Fix any prohibited terms: {warnings if warnings else 'none found'}

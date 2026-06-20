@@ -69,7 +69,9 @@ async def _run_workflow(request: WorkflowRequest) -> None:
         "campaign": request.campaign.model_dump(),
         "callback_base_url": base_url,
         "callback_api_key": api_key,
-        # Outputs (populated by nodes)
+        # RAG context (populated by retrieval node)
+        "retrieved_knowledge": None,
+        # Outputs (populated by agent nodes)
         "strategy_brief": None,
         "customer_insights": None,
         "content_draft": None,

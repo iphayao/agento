@@ -8,6 +8,11 @@ import type {
   CampaignRequest,
   GeneratedContent,
   GenerateContentRequest,
+  KnowledgeChunk,
+  KnowledgeDocument,
+  KnowledgeDocumentRequest,
+  KnowledgeSearchRequest,
+  KnowledgeSearchResult,
   ProductFact,
   ProductFactRequest,
 } from "@/types";
@@ -88,6 +93,26 @@ export const contentApi = {
     apiFetch<GeneratedContent>(`/content/${id}/reject`, { method: "PUT" }),
   delete: (id: string) =>
     apiFetch<void>(`/content/${id}`, { method: "DELETE" }),
+};
+
+// Knowledge Base
+export const knowledgeApi = {
+  list: () => apiFetch<KnowledgeDocument[]>("/knowledge"),
+  get: (id: string) => apiFetch<KnowledgeDocument>(`/knowledge/${id}`),
+  getChunks: (id: string) => apiFetch<KnowledgeChunk[]>(`/knowledge/${id}/chunks`),
+  create: (data: KnowledgeDocumentRequest) =>
+    apiFetch<KnowledgeDocument>("/knowledge", { method: "POST", body: JSON.stringify(data) }),
+  update: (id: string, data: KnowledgeDocumentRequest) =>
+    apiFetch<KnowledgeDocument>(`/knowledge/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  archive: (id: string) =>
+    apiFetch<void>(`/knowledge/${id}/archive`, { method: "PUT" }),
+  delete: (id: string) =>
+    apiFetch<void>(`/knowledge/${id}`, { method: "DELETE" }),
+  search: (data: KnowledgeSearchRequest) =>
+    apiFetch<KnowledgeSearchResult>("/knowledge/search", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 };
 
 // Agent Workflows

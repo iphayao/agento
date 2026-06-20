@@ -1,7 +1,11 @@
 """LangGraph StateGraph for content generation workflow.
 
-6-step pipeline: Brand Strategist → Customer Insight → Content Writer
+7-step pipeline: Retrieval → Brand Strategist → Customer Insight → Content Writer
                → Claim Compliance → Editor → Final Formatter
+
+The Retrieval node fetches relevant brand knowledge (guidelines, approved claims,
+customer reviews, winning content) from the knowledge base via RAG and injects it
+into the state so subsequent agent nodes can use it.
 """
 
 import logging
@@ -9,6 +13,7 @@ from langgraph.graph import StateGraph, END
 
 from app.workflow.state import WorkflowState
 from app.workflow.agents import (
+    retrieval_node,
     brand_strategist_node,
     customer_insight_node,
     content_writer_node,
@@ -23,6 +28,7 @@ logger = logging.getLogger(__name__)
 def build_workflow_graph() -> StateGraph:
     graph = StateGraph(WorkflowState)
 
+    graph.add_node("retrieval", retrieval_node)
     graph.add_node("brand_strategist", brand_strategist_node)
     graph.add_node("customer_insight", customer_insight_node)
     graph.add_node("content_writer", content_writer_node)
@@ -30,7 +36,8 @@ def build_workflow_graph() -> StateGraph:
     graph.add_node("editor", editor_node)
     graph.add_node("final_formatter", final_formatter_node)
 
-    graph.set_entry_point("brand_strategist")
+    graph.set_entry_point("retrieval")
+    graph.add_edge("retrieval", "brand_strategist")
     graph.add_edge("brand_strategist", "customer_insight")
     graph.add_edge("customer_insight", "content_writer")
     graph.add_edge("content_writer", "claim_compliance")
