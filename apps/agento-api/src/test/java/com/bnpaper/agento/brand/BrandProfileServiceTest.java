@@ -81,12 +81,27 @@ class BrandProfileServiceTest {
         request.setSlogan("สะอาด เนียนนุ่ม ฝุ่นน้อย");
         request.setKeyMessages(List.of("ฝุ่นน้อย", "เนียนนุ่ม"));
 
+        when(repository.count()).thenReturn(0L);
         when(repository.save(any(BrandProfile.class))).thenReturn(sampleBrand);
 
         BrandProfileDto.Response result = service.create(request);
 
         assertThat(result.getBrandName()).isEqualTo("SoClean");
         verify(repository, times(1)).save(any(BrandProfile.class));
+    }
+
+    @Test
+    void create_throwsWhenBrandProfileAlreadyExists() {
+        BrandProfileDto.Request request = new BrandProfileDto.Request();
+        request.setBrandName("AnotherBrand");
+
+        when(repository.count()).thenReturn(1L);
+
+        assertThatThrownBy(() -> service.create(request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("already exists");
+
+        verify(repository, never()).save(any());
     }
 
     @Test

@@ -12,4 +12,6 @@ public class AiProperties {
     private String model = "gpt-4o-mini";
     private double temperature = 0.7;
     private int maxTokens = 2000;
+    private int connectTimeoutSeconds = 5;
+    private int readTimeoutSeconds = 60;
 }

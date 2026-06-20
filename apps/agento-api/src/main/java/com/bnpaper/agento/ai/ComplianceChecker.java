@@ -2,6 +2,7 @@ package com.bnpaper.agento.ai;
 
 import org.springframework.stereotype.Component;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,16 +43,23 @@ public class ComplianceChecker {
             "best tissue"
     );
 
+    // Pre-normalize all Thai terms to NFC once at class-load time
+    private static final List<String> PROHIBITED_TERMS_TH_NORMALIZED = PROHIBITED_TERMS_TH.stream()
+            .map(t -> Normalizer.normalize(t, Normalizer.Form.NFC))
+            .toList();
+
     public List<String> findProhibitedTerms(String content) {
         if (content == null || content.isBlank()) {
             return List.of();
         }
-        String lower = content.toLowerCase();
+        // Normalize input to NFC so Thai characters with different Unicode representations match
+        String normalized = Normalizer.normalize(content, Normalizer.Form.NFC);
+        String lower = normalized.toLowerCase();
         List<String> found = new ArrayList<>();
 
-        for (String term : PROHIBITED_TERMS_TH) {
-            if (content.contains(term)) {
-                found.add(term);
+        for (int i = 0; i < PROHIBITED_TERMS_TH.size(); i++) {
+            if (normalized.contains(PROHIBITED_TERMS_TH_NORMALIZED.get(i))) {
+                found.add(PROHIBITED_TERMS_TH.get(i));
             }
         }
         for (String term : PROHIBITED_TERMS_EN) {

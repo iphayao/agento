@@ -11,14 +11,20 @@ import type {
 } from "@/types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY || "";
 
 async function apiFetch<T>(
   path: string,
   options?: RequestInit
 ): Promise<ApiResponse<T>> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(API_KEY ? { "X-Api-Key": API_KEY } : {}),
+    ...(options?.headers as Record<string, string>),
+  };
   const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { "Content-Type": "application/json", ...options?.headers },
     ...options,
+    headers,
   });
   const json = await res.json();
   if (!res.ok) {

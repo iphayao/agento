@@ -101,6 +101,19 @@ class ComplianceCheckerTest {
     }
 
     @Test
+    void detectsThaiTermWhenInputIsNFDEncoded() {
+        // สะอาดที่สุด decomposed into NFD (separate base + combining characters)
+        String nfcTerm = "สะอาดที่สุด";
+        String nfdContent = java.text.Normalizer.normalize(
+                "ทิชชู่ " + nfcTerm + " ที่ดีที่สุด", java.text.Normalizer.Form.NFD);
+
+        List<String> found = checker.findProhibitedTerms(nfdContent);
+
+        assertThat(found).contains("สะอาดที่สุด");
+        assertThat(checker.isSafe(nfdContent)).isFalse();
+    }
+
+    @Test
     void approvedTermsPassSafely() {
         String content = """
                 SoClean ทิชชู่ เนียนนุ่ม ฝุ่นน้อย ให้สัมผัสสะอาด

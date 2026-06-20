@@ -35,6 +35,10 @@ public class BrandProfileService {
 
     @Transactional
     public BrandProfileDto.Response create(BrandProfileDto.Request request) {
+        if (repository.count() > 0) {
+            throw new IllegalArgumentException(
+                    "A brand profile already exists. Agento supports one brand profile — update the existing profile instead.");
+        }
         BrandProfile entity = BrandProfile.builder()
                 .brandName(request.getBrandName())
                 .slogan(request.getSlogan())
