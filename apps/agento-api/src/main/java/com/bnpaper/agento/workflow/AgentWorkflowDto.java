@@ -41,6 +41,7 @@ public class AgentWorkflowDto {
         private String errorMessage;
         private LocalDateTime startedAt;
         private LocalDateTime completedAt;
+        private LocalDateTime createdAt;
     }
 
     @Data
@@ -137,6 +138,7 @@ public class AgentWorkflowDto {
                 .errorMessage(s.getErrorMessage())
                 .startedAt(s.getStartedAt())
                 .completedAt(s.getCompletedAt())
+                .createdAt(s.getCreatedAt())
                 .build();
     }
 }

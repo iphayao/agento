@@ -74,7 +74,7 @@ class AgentWorkflowServiceTest {
     @Test
     void createAndDispatch_successfulDispatch_returnsRunningWorkflow() {
         when(campaignRepo.findById(campaignId)).thenReturn(Optional.of(campaign));
-        when(brandRepo.findAll()).thenReturn(List.of(brand));
+        when(brandRepo.findFirstByOrderByCreatedAtAsc()).thenReturn(Optional.of(brand));
         when(productRepo.findAll()).thenReturn(List.of());
         when(workerProperties.getCallbackBaseUrl()).thenReturn("http://localhost:8080/api");
 
@@ -99,7 +99,7 @@ class AgentWorkflowServiceTest {
     @Test
     void createAndDispatch_workerUnavailable_returnsFailedWorkflow() {
         when(campaignRepo.findById(campaignId)).thenReturn(Optional.of(campaign));
-        when(brandRepo.findAll()).thenReturn(List.of(brand));
+        when(brandRepo.findFirstByOrderByCreatedAtAsc()).thenReturn(Optional.of(brand));
         when(productRepo.findAll()).thenReturn(List.of());
         when(workerProperties.getCallbackBaseUrl()).thenReturn("http://localhost:8080/api");
 
@@ -132,7 +132,7 @@ class AgentWorkflowServiceTest {
     @Test
     void createAndDispatch_throwsWhenNoBrandProfile() {
         when(campaignRepo.findById(campaignId)).thenReturn(Optional.of(campaign));
-        when(brandRepo.findAll()).thenReturn(List.of());
+        when(brandRepo.findFirstByOrderByCreatedAtAsc()).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.createAndDispatch(campaignId))
                 .isInstanceOf(ResourceNotFoundException.class)
@@ -355,6 +355,26 @@ class AgentWorkflowServiceTest {
                 c.getComplianceNotes() != null
                         && c.getComplianceNotes().contains("WARNING")
                         && c.getComplianceNotes().contains("dust-free")));
+    }
+
+    @Test
+    void handleStepCallback_ignoresUnknownStatus() {
+        UUID wfId = UUID.randomUUID();
+        AgentWorkflow workflow = AgentWorkflow.builder()
+                .id(wfId).campaignId(campaignId)
+                .status(AgentWorkflowStatus.RUNNING).build();
+
+        when(workflowRepo.findById(wfId)).thenReturn(Optional.of(workflow));
+
+        AgentWorkflowDto.StepCallbackRequest req = new AgentWorkflowDto.StepCallbackRequest();
+        req.setStepName("brand_strategist");
+        req.setStatus("UNKNOWN_STATUS");
+
+        // Should not throw — unknown status is silently ignored
+        service.handleStepCallback(wfId, req);
+
+        // Nothing should be persisted for an unknown status
+        verify(stepRepo, never()).save(any());
     }
 
     @Test

@@ -2,6 +2,7 @@ package com.bnpaper.agento.workflow;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -40,4 +41,8 @@ public class AgentStepResult {
     private LocalDateTime startedAt;
 
     private LocalDateTime completedAt;
+
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 }

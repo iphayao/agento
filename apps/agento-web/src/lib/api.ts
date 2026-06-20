@@ -17,8 +17,9 @@ import type {
   ProductFactRequest,
 } from "@/types";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
-const API_KEY = process.env.NEXT_PUBLIC_API_KEY || "";
+// All API calls go through the Next.js proxy at /api/[...path].
+// The proxy injects the API key server-side, so the key never reaches the browser.
+const BASE_URL = "/api";
 
 async function apiFetch<T>(
   path: string,
@@ -26,7 +27,6 @@ async function apiFetch<T>(
 ): Promise<ApiResponse<T>> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...(API_KEY ? { "X-Api-Key": API_KEY } : {}),
     ...(options?.headers as Record<string, string>),
   };
   const res = await fetch(`${BASE_URL}${path}`, {

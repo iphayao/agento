@@ -25,7 +25,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleAiProvider(AiProviderException ex) {
         log.error("AI provider error: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error("AI generation failed: " + ex.getMessage()));
+                .body(ApiResponse.error("AI generation failed. Please try again."));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -53,6 +53,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleGeneral(Exception ex) {
         log.error("Unhandled exception", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error("Internal server error: " + ex.getMessage()));
+                .body(ApiResponse.error("An internal error occurred. Please try again."));
     }
 }

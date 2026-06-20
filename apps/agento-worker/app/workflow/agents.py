@@ -111,7 +111,11 @@ async def _call_llm(system_prompt: str, user_prompt: str) -> str:
 def _parse_json(raw: str) -> dict:
     """Parse JSON from LLM response, stripping markdown fences if present."""
     clean = re.sub(r"```(?:json)?", "", raw).strip()
-    return json.loads(clean)
+    try:
+        return json.loads(clean)
+    except json.JSONDecodeError:
+        logger.warning("Failed to parse LLM JSON response (first 300 chars): %.300s", raw)
+        raise
 
 
 def _brand_context(brand: dict) -> str:
@@ -393,11 +397,29 @@ async def claim_compliance_node(state: WorkflowState) -> dict:
         draft.get("callToAction", ""),
     ])
 
-    # Server-side term check (deterministic, no LLM needed)
+    # Server-side term check (deterministic, no LLM cost)
     server_warnings = find_prohibited_terms(full_text)
 
+    # If deterministic check already found violations, skip the LLM call.
+    # The editor node will fix them. This avoids a redundant (and expensive) LLM round-trip.
+    if server_warnings:
+        compliance_result = {
+            "isSafe": False,
+            "warnings": server_warnings,
+            "suggestedRevisions": [],
+        }
+        output = json.dumps(compliance_result)
+        await notify_step(base_url, api_key, wf_id, step, "COMPLETED",
+                          output=output, input_payload=full_text[:500])
+        return {
+            **state,
+            "compliance_result": compliance_result,
+            "compliance_warnings": server_warnings,
+            "current_step": step,
+        }
+
     rag = _rag(state)
-    # LLM also reviews for subtle compliance issues
+    # No hard violations found — run LLM review to catch subtle compliance issues
     system = f"""You are a compliance reviewer for Thai marketing content.
 {CLAIM_SAFETY_RULES}
 {format_section(rag['prohibited_claims'], 'Additional Prohibited Claims from Brand Memory')}
@@ -413,7 +435,6 @@ Respond ONLY with valid JSON:
         result = _parse_json(raw)
         ai_warnings = result.get("prohibitedTermsFound", [])
 
-        # Merge server + AI findings
         all_warnings = list(set(server_warnings + ai_warnings))
         compliance_result = {
             "isSafe": len(all_warnings) == 0,
@@ -430,11 +451,11 @@ Respond ONLY with valid JSON:
             "current_step": step,
         }
     except Exception as exc:
-        # Fallback: use server-side check only — log the LLM failure but don't fail the step
+        # Fallback: server-side check only — log the LLM failure but don't fail the step
         logger.warning("LLM compliance check failed, using server-side only: %s", exc)
         compliance_result = {
-            "isSafe": len(server_warnings) == 0,
-            "warnings": server_warnings,
+            "isSafe": True,
+            "warnings": [],
             "suggestedRevisions": [],
         }
         output = json.dumps(compliance_result)
@@ -442,7 +463,7 @@ Respond ONLY with valid JSON:
         return {
             **state,
             "compliance_result": compliance_result,
-            "compliance_warnings": server_warnings,
+            "compliance_warnings": [],
             "current_step": step,
         }
 

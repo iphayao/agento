@@ -127,6 +127,7 @@ export interface AgentStepResult {
   errorMessage?: string;
   startedAt?: string;
   completedAt?: string;
+  createdAt?: string;
 }
 
 export interface AgentWorkflow {

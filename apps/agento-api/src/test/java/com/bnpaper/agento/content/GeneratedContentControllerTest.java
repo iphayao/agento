@@ -96,7 +96,7 @@ class GeneratedContentControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.message").value("AI generation failed: AI API call failed: timeout"));
+                .andExpect(jsonPath("$.message").value("AI generation failed. Please try again."));
     }
 
     @Test

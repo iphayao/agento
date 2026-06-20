@@ -52,7 +52,7 @@ public class AgentWorkflowService {
         Campaign campaign = campaignRepo.findById(campaignId)
                 .orElseThrow(() -> new ResourceNotFoundException("Campaign", campaignId));
 
-        BrandProfile brand = brandRepo.findAll().stream().findFirst()
+        BrandProfile brand = brandRepo.findFirstByOrderByCreatedAtAsc()
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "No brand profile found. Please create a brand profile before running a workflow."));
 
@@ -186,7 +186,13 @@ public class AgentWorkflowService {
             return;
         }
 
-        AgentStepStatus stepStatus = AgentStepStatus.valueOf(req.getStatus().toUpperCase());
+        AgentStepStatus stepStatus;
+        try {
+            stepStatus = AgentStepStatus.valueOf(req.getStatus().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            log.warn("Ignoring step callback with unknown status '{}' for workflow {}", req.getStatus(), workflowId);
+            return;
+        }
 
         // Upsert: find existing step record or create new
         List<AgentStepResult> existing = stepRepo.findByWorkflowIdOrderByStartedAtAsc(workflowId);
@@ -245,7 +251,7 @@ public class AgentWorkflowService {
                 .callToAction(fc.getCallToAction())
                 .hashtags(fc.getHashtags() != null ? fc.getHashtags() : List.of())
                 .status(ContentStatus.DRAFT)
-                .aiModel("langgraph-6-step")
+                .aiModel("langgraph-7-step")
                 .promptVersion("v2")
                 .complianceNotes(fc.getComplianceNotes() != null ? fc.getComplianceNotes() : complianceNotes)
                 .build();
@@ -331,7 +337,7 @@ public class AgentWorkflowService {
             );
             return objectMapper.writeValueAsString(payload);
         } catch (JsonProcessingException e) {
-            return "{}";
+            throw new IllegalStateException("Failed to serialize workflow input payload", e);
         }
     }
 

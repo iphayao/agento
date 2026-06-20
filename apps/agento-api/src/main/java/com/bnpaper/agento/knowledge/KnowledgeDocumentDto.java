@@ -22,6 +22,7 @@ public class KnowledgeDocumentDto {
         private DocumentType type;
 
         @NotBlank(message = "Content is required")
+        @Size(max = 50000, message = "Content must be under 50,000 characters")
         private String content;
 
         private String source;
