@@ -1,11 +1,17 @@
 import type {
   AgentWorkflow,
   AgentStepResult,
+  AnalyzeRequest,
   ApiResponse,
   BrandProfile,
   BrandProfileRequest,
   Campaign,
   CampaignRequest,
+  ChannelBreakdown,
+  ContentInsight,
+  ContentPerformance,
+  ContentPerformanceRequest,
+  DashboardStats,
   GeneratedContent,
   GenerateContentRequest,
   KnowledgeChunk,
@@ -13,8 +19,10 @@ import type {
   KnowledgeDocumentRequest,
   KnowledgeSearchRequest,
   KnowledgeSearchResult,
+  PerformanceSummary,
   ProductFact,
   ProductFactRequest,
+  TopContent,
 } from "@/types";
 
 // All API calls go through the Next.js proxy at /api/[...path].
@@ -110,6 +118,44 @@ export const knowledgeApi = {
     apiFetch<void>(`/knowledge/${id}`, { method: "DELETE" }),
   search: (data: KnowledgeSearchRequest) =>
     apiFetch<KnowledgeSearchResult>("/knowledge/search", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+};
+
+// Performance Learning
+export const performanceApi = {
+  list: () => apiFetch<ContentPerformance[]>("/performance"),
+  get: (id: string) => apiFetch<ContentPerformance>(`/performance/${id}`),
+  listByContent: (contentId: string) =>
+    apiFetch<ContentPerformance[]>(`/performance/content/${contentId}`),
+  create: (data: ContentPerformanceRequest) =>
+    apiFetch<ContentPerformance>("/performance", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  update: (id: string, data: ContentPerformanceRequest) =>
+    apiFetch<ContentPerformance>(`/performance/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  delete: (id: string) =>
+    apiFetch<void>(`/performance/${id}`, { method: "DELETE" }),
+  importCsv: (file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    return fetch(`${BASE_URL}/performance/import/csv`, {
+      method: "POST",
+      body: form,
+    }).then((r) => r.json() as Promise<ApiResponse<{ imported: number }>>);
+  },
+  getDashboard: () => apiFetch<DashboardStats>("/performance/analytics/dashboard"),
+  getTop: (n = 5) =>
+    apiFetch<TopContent>(`/performance/analytics/top?n=${n}`),
+  getInsights: () => apiFetch<ContentInsight[]>("/performance/insights"),
+  getSummaries: () => apiFetch<PerformanceSummary[]>("/performance/summaries"),
+  analyze: (data: AnalyzeRequest) =>
+    apiFetch<{ status: string; recordCount: number }>("/performance/analyze", {
       method: "POST",
       body: JSON.stringify(data),
     }),

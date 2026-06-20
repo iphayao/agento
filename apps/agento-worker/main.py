@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.routers.workflows import router as workflows_router
+from app.routers.performance import router as performance_router
 
 logging.basicConfig(
     level=getattr(logging, settings.log_level.upper(), logging.INFO),
@@ -27,6 +28,7 @@ app.add_middleware(
 )
 
 app.include_router(workflows_router)
+app.include_router(performance_router)
 
 
 @app.get("/health")

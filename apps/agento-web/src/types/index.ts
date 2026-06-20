@@ -233,6 +233,110 @@ export interface KnowledgeChunkMatch {
   chunkIndex: number;
 }
 
+// ── Performance Learning ────────────────────────────────────────────────────
+
+export interface ContentPerformance {
+  id: string;
+  generatedContentId: string;
+  channel: string;
+  publishedAt?: string;
+  impressions: number;
+  views: number;
+  clicks: number;
+  likes: number;
+  comments: number;
+  shares: number;
+  orders: number;
+  revenue: number;
+  conversionRate?: number;
+  engagementRate?: number;
+  cost: number;
+  roas?: number;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ContentPerformanceRequest {
+  generatedContentId: string;
+  channel: string;
+  publishedAt?: string;
+  impressions: number;
+  views: number;
+  clicks: number;
+  likes: number;
+  comments: number;
+  shares: number;
+  orders: number;
+  revenue: number;
+  cost: number;
+  notes?: string;
+}
+
+export type InsightType =
+  | "WINNING_HOOK"
+  | "WINNING_ANGLE"
+  | "LOW_PERFORMING_ANGLE"
+  | "STRONG_CTA"
+  | "WEAK_CTA"
+  | "AUDIENCE_SIGNAL"
+  | "CHANNEL_SIGNAL";
+
+export interface ContentInsight {
+  id: string;
+  generatedContentId?: string;
+  campaignId?: string;
+  insightType: InsightType;
+  insightText: string;
+  confidenceScore: number;
+  createdAt: string;
+}
+
+export interface PerformanceSummary {
+  id: string;
+  periodStart: string;
+  periodEnd: string;
+  channel?: string;
+  summaryText: string;
+  recommendedAngles: string[];
+  recommendedHooks: string[];
+  recommendedCTAs: string[];
+  avoidPatterns: string[];
+  createdAt: string;
+}
+
+export interface DashboardStats {
+  totalRecords: number;
+  totalImpressions: number;
+  totalClicks: number;
+  totalOrders: number;
+  totalRevenue: number;
+  totalCost: number;
+  averageEngagementRate: number;
+  averageRoas: number;
+}
+
+export interface TopContent {
+  byRevenue: ContentPerformance[];
+  byEngagement: ContentPerformance[];
+  byRoas: ContentPerformance[];
+  byChannel: ChannelBreakdown[];
+}
+
+export interface ChannelBreakdown {
+  channel: string;
+  count: number;
+  impressions: number;
+  clicks: number;
+  revenue: number;
+}
+
+export interface AnalyzeRequest {
+  contentIds?: string[];
+  channel?: string;
+  topN?: number;
+}
+
 export const DOCUMENT_TYPES: { value: DocumentType; label: string }[] = [
   { value: "BRAND_GUIDELINE", label: "Brand Guideline" },
   { value: "PRODUCT_FACT", label: "Product Fact" },
