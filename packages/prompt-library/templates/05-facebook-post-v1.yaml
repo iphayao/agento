@@ -1,0 +1,183 @@
+name: "Facebook Post"
+slug: "facebook-post-v1"
+version: "1.0"
+category: generation
+content_type: social-post
+channel: facebook
+brand: soclean
+description: "Facebook post (100–250 Thai chars) with image direction and 3–5 hashtags for SoClean"
+purpose: >
+  Generates a Facebook organic post for SoClean's brand page. Tone is warmer and more
+  community-oriented than TikTok. Suitable for product lifestyle posts, value posts,
+  review reposts, and seasonal content. Output is always DRAFT.
+claim_safety_required: true
+tags: [facebook, social, post, organic, community, lifestyle]
+
+variables:
+  - name: content_pillar
+    type: enum
+    required: true
+    description: "Primary pillar this post should communicate"
+    options: [เนียนนุ่ม, สะอาด, ฝุ่นน้อย, คุ้มค่า, เหมาะทุกที่, รีวิวลูกค้า, ซื้อยกลัง]
+    example: "คุ้มค่า"
+  - name: target_persona
+    type: enum
+    required: true
+    description: "Persona to write for"
+    options: ["มิ้น (Gen Y Household)", "คุณแม่บ้าน (Family)", "พี่โอ๋ (Office)", "เจ้าของร้าน (Reseller)"]
+    example: "คุณแม่บ้าน (Family)"
+  - name: post_type
+    type: enum
+    required: true
+    description: "Type of Facebook post to generate"
+    options: [lifestyle, value-math, review-repost, reseller-cta, seasonal, educational]
+    example: "value-math"
+  - name: seasonal_occasion
+    type: string
+    required: false
+    description: "Occasion if post_type is seasonal, e.g. 'วันสงกรานต์', 'กลับโรงเรียน'"
+    example: ""
+  - name: review_snippet
+    type: string
+    required: false
+    description: "Review text if post_type is review-repost (must be a real review)"
+    example: ""
+  - name: include_shop_link_cta
+    type: boolean
+    required: false
+    default: true
+    description: "Whether to include a CTA directing to Shopee/Lazada/TikTok Shop"
+    example: true
+  - name: post_count
+    type: integer
+    required: false
+    default: 2
+    description: "Number of post variants to generate (1–3)"
+    example: 2
+
+system_prompt: |
+  You are a Facebook content writer for SoClean, a facial tissue brand by BN Paper, Thailand.
+  Facebook posts for SoClean should feel warm, relatable, and community-oriented — not
+  corporate broadcast. Readers are Thai household buyers and families who follow the page
+  because they enjoy the content, not just to buy.
+
+  ## Brand Context
+  - Brand: SoClean | Company: BN Paper | Market: Thailand
+  - Product: Facial tissue, 2-ply, 180 sheets/box, Pack of 5 (900 sheets/pack)
+  - Positioning: "สะอาด เนียนนุ่ม ฝุ่นน้อย" — practical, warm, honest
+  - Language: ภาษาพูด leaning toward ภาษาไทยกลาง — conversational but not overly slang
+  - Post length: 100–250 Thai characters + image description
+  - Hashtags: 3–5 (always include #SoClean; keep small — Facebook penalises hashtag spam)
+  - Emoji: 1–3 per post, natural placement only
+  - CTA: end with a shop link suggestion when include_shop_link_cta is true
+
+  ## CRITICAL — CLAIM SAFETY RULES
+  NEVER use: ไร้ฝุ่น 100%, dust-free, antibacterial, ฆ่าเชื้อโรค, medically safe,
+  hypoallergenic, dermatologist, สะอาดที่สุด, นุ่มที่สุด, ปลอดภัยที่สุด, ดีที่สุด, อันดับ 1
+  USE INSTEAD: ฝุ่นน้อย, เนียนนุ่ม, ให้สัมผัสสะอาด, เหมาะกับการใช้งานทุกวัน, คุ้มค่า
+
+  ## Output Format
+  Respond ONLY with a valid JSON object. No prose, no markdown.
+
+user_prompt: |
+  Generate Facebook post variants for SoClean.
+
+  ## Input Variables
+  - Content pillar: {{content_pillar}}
+  - Target persona: {{target_persona}}
+  - Post type: {{post_type}}
+  - Seasonal occasion: {{seasonal_occasion}}
+  - Review snippet: {{review_snippet}}
+  - Include shop link CTA: {{include_shop_link_cta}}
+  - Number of variants: {{post_count}}
+
+  ## Requirements
+  1. Each post body: 100–250 Thai characters.
+  2. Tone: warm and community-oriented — feels like a friend sharing, not a brand shouting.
+  3. Match the {{post_type}} format:
+     - lifestyle: natural product-in-use story
+     - value-math: sheet count / carton math that makes value tangible
+     - review-repost: frame the review snippet warmly, attribute to Shopee/Lazada
+     - reseller-cta: invite shop owners to inquire about carton pricing
+     - seasonal: connect {{seasonal_occasion}} naturally to the product
+     - educational: informative tip about tissue use/care without medical claims
+  4. End with a CTA pointing to Shopee / Lazada / TikTok Shop if include_shop_link_cta is true.
+  5. Verify all claims against claim safety rules.
+
+  Return the JSON output now.
+
+output_format: json
+output_schema:
+  type: object
+  required: [posts, hashtags, image_directions, compliance_check]
+  properties:
+    posts:
+      type: array
+      items:
+        type: object
+        required: [variant, body, character_count]
+        properties:
+          variant: { type: integer }
+          body: { type: string }
+          character_count: { type: integer }
+    hashtags:
+      type: array
+      items: { type: string }
+    image_directions:
+      type: array
+      items: { type: string }
+      description: "Suggested image/visual direction for each post variant"
+    compliance_check:
+      type: object
+      required: [approved_claims_used, prohibited_terms_detected, is_safe]
+      properties:
+        approved_claims_used: { type: array, items: { type: string } }
+        prohibited_terms_detected: { type: array, items: { type: string } }
+        is_safe: { type: boolean }
+
+example_input:
+  content_pillar: "คุ้มค่า"
+  target_persona: "คุณแม่บ้าน (Family)"
+  post_type: "value-math"
+  seasonal_occasion: ""
+  review_snippet: ""
+  include_shop_link_cta: true
+  post_count: 2
+
+example_output:
+  posts:
+    - variant: 1
+      body: |
+        คิดดูสิ…
+
+        SoClean 1 แพ็ค = 5 กล่อง = 900 แผ่น
+        ครอบครัว 4 คน ใช้วันละ 30 แผ่น = ใช้ได้ 30 วัน
+
+        คุ้มค่า เนียนนุ่ม ใช้ได้ทั้งบ้าน สั่งได้เลยที่ Shopee และ Lazada 🛒
+      character_count: 157
+    - variant: 2
+      body: |
+        ทิชชู่ดีไม่ต้องซื้อบ่อย
+
+        SoClean 900 แผ่น/แพ็ค ราคาคุ้ม ใช้ได้ทั้งเดือนทั้งบ้าน
+        เนียนนุ่ม ฝุ่นน้อย เหมาะสำหรับทุกคนในครอบครัว 🏠
+
+        สั่งซื้อได้เลยที่ Shopee / Lazada
+      character_count: 178
+  hashtags:
+    - "#SoClean"
+    - "#ทิชชู่SoClean"
+    - "#คุ้มค่า"
+    - "#ของใช้ในบ้าน"
+    - "#ทิชชู่ราคาดี"
+  image_directions:
+    - "Flat lay of SoClean pack (5 boxes) on clean white background with '900 แผ่น' graphic overlay — warm natural light"
+    - "Family lifestyle scene — SoClean on living room table, natural home environment, 2–3 family members in soft focus background"
+  compliance_check:
+    approved_claims_used:
+      - "คุ้มค่า"
+      - "เนียนนุ่ม"
+      - "ฝุ่นน้อย"
+      - "900 แผ่น/แพ็ค"
+    prohibited_terms_detected: []
+    is_safe: true

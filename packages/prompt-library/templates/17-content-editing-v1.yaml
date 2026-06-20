@@ -1,0 +1,176 @@
+name: "Content Editing"
+slug: "content-editing-v1"
+version: "1.0"
+category: utility
+content_type: edit
+channel: any
+brand: soclean
+description: "Edit and improve existing SoClean marketing copy — fix claims, improve tone, adjust length, strengthen hook"
+purpose: >
+  Edits an existing piece of marketing content to: fix prohibited claims, improve tone,
+  adjust length to channel spec, strengthen the opening hook, or improve overall quality.
+  The editor always preserves brand voice (warm, honest, practical) and claim safety.
+  Output is always DRAFT — requires human review.
+claim_safety_required: true
+tags: [editing, rewrite, improve, fix, tone, claim-safety, utility]
+
+variables:
+  - name: original_content
+    type: string
+    required: true
+    description: "The existing content to be edited"
+    example: "SoClean ทิชชู่ดีที่สุด ไร้ฝุ่น เนียนนุ่ม สั่งได้เลย"
+  - name: content_type
+    type: string
+    required: true
+    description: "Type of content being edited"
+    example: "TikTok caption"
+  - name: channel
+    type: enum
+    required: true
+    description: "Channel this content is for"
+    options: [TikTok, Facebook, Shopee, Lazada, LINE, any]
+    example: "TikTok"
+  - name: edit_instructions
+    type: array
+    required: true
+    description: "List of specific editing goals"
+    options:
+      - "fix-prohibited-claims"
+      - "improve-tone"
+      - "shorten"
+      - "lengthen"
+      - "strengthen-hook"
+      - "add-cta"
+      - "add-product-specs"
+      - "improve-flow"
+    example: ["fix-prohibited-claims", "strengthen-hook"]
+  - name: target_length
+    type: string
+    required: false
+    description: "Target length after editing (e.g. '50–100 chars', '150 chars max')"
+    example: "50–100 chars"
+  - name: tone_adjustment
+    type: string
+    required: false
+    description: "Tone to move toward (if improve-tone is requested)"
+    example: "warmer and more conversational"
+
+system_prompt: |
+  You are an editor for SoClean marketing content by BN Paper, Thailand.
+  You edit existing copy to improve quality, fix compliance issues, and match brand voice.
+
+  ## Editing Principles
+  1. Preserve the original intent and key message — do not change what the content is about.
+  2. Fix any prohibited claims — replace with approved alternatives, never delete a benefit.
+  3. Brand voice: Warm, honest, practical, confident. Never over-promises.
+  4. Language: Thai conversational (TikTok/Facebook) or formal-practical (Shopee/Lazada).
+  5. Always explain what you changed and why — the editor's notes are as important as the edit.
+
+  ## CRITICAL — CLAIM SAFETY RULES
+  NEVER leave in or introduce: ไร้ฝุ่น 100%, dust-free, antibacterial, ฆ่าเชื้อโรค, medically safe,
+  hypoallergenic, dermatologist, สะอาดที่สุด, นุ่มที่สุด, ปลอดภัยที่สุด, ดีที่สุด, อันดับ 1
+  USE INSTEAD: ฝุ่นน้อย, เนียนนุ่ม, ให้สัมผัสสะอาด, เหมาะกับการใช้งานทุกวัน, คุ้มค่า
+
+  ## Output Format
+  Respond ONLY with a valid JSON object. No prose, no markdown.
+
+user_prompt: |
+  Edit this SoClean marketing content.
+
+  ## Input Variables
+  - Content type: {{content_type}}
+  - Channel: {{channel}}
+  - Edit instructions: {{edit_instructions}}
+  - Target length: {{target_length}}
+  - Tone adjustment: {{tone_adjustment}}
+
+  ORIGINAL CONTENT:
+  ---
+  {{original_content}}
+  ---
+
+  ## Requirements
+  1. Apply each edit instruction in {{edit_instructions}}:
+     - fix-prohibited-claims: identify and replace with approved alternatives
+     - improve-tone: adjust to {{tone_adjustment}}
+     - shorten/lengthen: adjust to {{target_length}}
+     - strengthen-hook: rewrite the opening line for more immediate impact
+     - add-cta: add a natural call-to-action appropriate for {{channel}}
+     - add-product-specs: weave in 2-ply, 180 sheets, 900 sheets/pack as appropriate
+     - improve-flow: reorder or rewrite for better readability
+  2. Produce ONE edited version.
+  3. List all changes made with reasons in editor_notes.
+  4. Verify the edited content against claim safety rules.
+
+  Return the JSON output now.
+
+output_format: json
+output_schema:
+  type: object
+  required: [original_content, edited_content, editor_notes, changes_summary, compliance_check]
+  properties:
+    original_content: { type: string }
+    edited_content: { type: string }
+    edited_character_count: { type: integer }
+    editor_notes:
+      type: array
+      items:
+        type: object
+        required: [change, reason]
+        properties:
+          change: { type: string, description: "What was changed" }
+          reason: { type: string, description: "Why it was changed" }
+          original_phrase: { type: string }
+          replacement_phrase: { type: string }
+    changes_summary:
+      type: string
+      description: "One-sentence summary of all changes made"
+    compliance_check:
+      type: object
+      required: [original_had_violations, approved_claims_used, prohibited_terms_detected, is_safe]
+      properties:
+        original_had_violations: { type: boolean }
+        violations_fixed:
+          type: array
+          items: { type: string }
+        approved_claims_used: { type: array, items: { type: string } }
+        prohibited_terms_detected: { type: array, items: { type: string } }
+        is_safe: { type: boolean }
+
+example_input:
+  original_content: "SoClean ทิชชู่ดีที่สุด ไร้ฝุ่น เนียนนุ่ม สั่งได้เลย"
+  content_type: "TikTok caption"
+  channel: "TikTok"
+  edit_instructions: ["fix-prohibited-claims", "strengthen-hook"]
+  target_length: "50–100 chars"
+  tone_adjustment: "warmer and more conversational"
+
+example_output:
+  original_content: "SoClean ทิชชู่ดีที่สุด ไร้ฝุ่น เนียนนุ่ม สั่งได้เลย"
+  edited_content: "ทิชชู่ที่ใช้แล้วอยากสั่งซ้ำ ✨ SoClean เนียนนุ่ม ฝุ่นน้อย สั่งได้เลย"
+  edited_character_count: 63
+  editor_notes:
+    - change: "Removed 'ดีที่สุด' — superlative claim"
+      reason: "Prohibited superlative without verified evidence. Replaced with social-proof framing 'ที่ใช้แล้วอยากสั่งซ้ำ'"
+      original_phrase: "ทิชชู่ดีที่สุด"
+      replacement_phrase: "ทิชชู่ที่ใช้แล้วอยากสั่งซ้ำ"
+    - change: "Replaced 'ไร้ฝุ่น' with 'ฝุ่นน้อย'"
+      reason: "ไร้ฝุ่น implies absolute dust elimination — no verification exists. ฝุ่นน้อย is the approved relative claim."
+      original_phrase: "ไร้ฝุ่น"
+      replacement_phrase: "ฝุ่นน้อย"
+    - change: "Moved hook to front: 'ทิชชู่ที่ใช้แล้วอยากสั่งซ้ำ ✨'"
+      reason: "TikTok captions need to hook in the first few words — social proof opener is more engaging than brand name first."
+      original_phrase: "SoClean ทิชชู่ดีที่สุด"
+      replacement_phrase: "ทิชชู่ที่ใช้แล้วอยากสั่งซ้ำ ✨ SoClean"
+  changes_summary: "Fixed 2 prohibited claims (ดีที่สุด → social proof, ไร้ฝุ่น → ฝุ่นน้อย) and moved the hook to the opening."
+  compliance_check:
+    original_had_violations: true
+    violations_fixed:
+      - "ดีที่สุด → ทิชชู่ที่ใช้แล้วอยากสั่งซ้ำ"
+      - "ไร้ฝุ่น → ฝุ่นน้อย"
+    approved_claims_used:
+      - "เนียนนุ่ม"
+      - "ฝุ่นน้อย"
+    prohibited_terms_detected: []
+    is_safe: true

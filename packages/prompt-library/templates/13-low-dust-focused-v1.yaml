@@ -1,0 +1,168 @@
+name: "Low-Dust-Focused Content"
+slug: "low-dust-focused-v1"
+version: "1.0"
+category: generation
+content_type: pillar-content
+channel: multi
+brand: soclean
+description: "Content centred on the ฝุ่นน้อย (low-dust) pillar — demonstration scenarios, office use, desk protection"
+purpose: >
+  Generates content for SoClean's most distinctive differentiator: ฝุ่นน้อย (low-dust).
+  This is a meaningful claim backed by manufacturing intent — never claim absolute dust elimination.
+  Best suited for: office content, demonstration videos, comparison posts.
+  Output is always DRAFT.
+claim_safety_required: true
+tags: [low-dust, pillar, ฝุ่นน้อย, office, demonstration, tiktok, facebook, shopee]
+
+variables:
+  - name: use_context
+    type: enum
+    required: true
+    description: "Context where low-dust matters most"
+    options:
+      - "ออฟฟิศ (office desk/keyboard)"
+      - "ห้องนอน (bedroom/face care)"
+      - "ห้องครัว (kitchen surfaces)"
+      - "โต๊ะทำงานที่บ้าน (home office)"
+      - "สาธิตทั่วไป (general demo)"
+    example: "ออฟฟิศ (office desk/keyboard)"
+  - name: target_channel
+    type: enum
+    required: true
+    description: "Channel for this content"
+    options: [TikTok, Facebook, Shopee, Lazada]
+    example: "TikTok"
+  - name: format
+    type: enum
+    required: true
+    description: "Content format to generate"
+    options: [caption, post, script-outline, product-description-section]
+    example: "script-outline"
+  - name: include_demo_instructions
+    type: boolean
+    required: false
+    default: false
+    description: "Whether to include visual demo instructions (for video content)"
+    example: true
+  - name: content_count
+    type: integer
+    required: false
+    default: 2
+    description: "Number of content variants (1–3)"
+    example: 2
+
+system_prompt: |
+  You are a content creator for SoClean by BN Paper, Thailand, specialising in the low-dust pillar.
+  Your role is to make the ฝุ่นน้อย benefit visible and believable through demonstration
+  scenarios and concrete context — office keyboards, dark surfaces, daily desk use.
+
+  ## Low-Dust Claim Rules (STRICTLY ENFORCED)
+  - APPROVED: ฝุ่นน้อย, ฝุ่นน้อยกว่า, ให้สัมผัสสะอาด, ไม่ระคายเคืองจากฝุ่น (customer-attributed)
+  - PROHIBITED (ABSOLUTE CLAIMS): ไร้ฝุ่น 100%, ไม่มีฝุ่นเลย, ปลอดฝุ่นสมบูรณ์แบบ, dust-free, zero dust
+  - The product has LESS dust — not NO dust. Never claim zero or absolute elimination.
+  - Demonstration content: Show less dust visually — don't claim scientific proof.
+
+  ## Brand Context
+  - Brand: SoClean | Company: BN Paper
+  - Product: Facial tissue, 2-ply, 180 sheets/box, Pack of 5
+  - Low-dust is a manufacturing intent / positioning claim — approved as "ฝุ่นน้อย"
+  - Best demonstration: dark surface (keyboard, desk, fabric) showing minimal residue
+
+  ## CRITICAL — CLAIM SAFETY RULES
+  NEVER use: ไร้ฝุ่น 100%, dust-free, zero dust, ไม่มีฝุ่นเลย, antibacterial,
+  สะอาดที่สุด, นุ่มที่สุด, ปลอดภัยที่สุด, ดีที่สุด, อันดับ 1
+  USE INSTEAD: ฝุ่นน้อย, ฝุ่นน้อยกว่า, ให้สัมผัสสะอาด, เหมาะกับออฟฟิศ
+
+  ## Output Format
+  Respond ONLY with a valid JSON object. No prose, no markdown.
+
+user_prompt: |
+  Generate low-dust-pillar content for SoClean.
+
+  ## Input Variables
+  - Use context: {{use_context}}
+  - Target channel: {{target_channel}}
+  - Format: {{format}}
+  - Include demo instructions: {{include_demo_instructions}}
+  - Number of variants: {{content_count}}
+
+  ## Requirements
+  1. Ground content in the {{use_context}} scenario — make it specific and visual.
+  2. Use "ฝุ่นน้อย" or "ฝุ่นน้อยกว่า" — NEVER absolute claims like "ไร้ฝุ่น 100%".
+  3. If include_demo_instructions is true, add specific camera/visual directions.
+  4. Format rules:
+     - caption: 50–100 Thai chars + hashtags
+     - post: 100–200 Thai chars
+     - script-outline: 5 scene bullets with visual + text overlay
+     - product-description-section: 80–150 chars for embedding in Shopee/Lazada
+  5. If the context is office-related, mention: "ฝุ่นน้อย ไม่รบกวนคีย์บอร์ดและจอ".
+
+  Return the JSON output now.
+
+output_format: json
+output_schema:
+  type: object
+  required: [content_pieces, hashtags, compliance_check]
+  properties:
+    content_pieces:
+      type: array
+      items:
+        type: object
+        required: [variant, format, channel, body]
+        properties:
+          variant: { type: integer }
+          format: { type: string }
+          channel: { type: string }
+          body: { type: string }
+          character_count: { type: integer }
+          demo_instructions: { type: string }
+          image_direction: { type: string }
+    hashtags:
+      type: array
+      items: { type: string }
+    compliance_check:
+      type: object
+      required: [approved_claims_used, prohibited_terms_detected, is_safe]
+      properties:
+        approved_claims_used: { type: array, items: { type: string } }
+        prohibited_terms_detected: { type: array, items: { type: string } }
+        is_safe: { type: boolean }
+
+example_input:
+  use_context: "ออฟฟิศ (office desk/keyboard)"
+  target_channel: "TikTok"
+  format: "script-outline"
+  include_demo_instructions: true
+  content_count: 1
+
+example_output:
+  content_pieces:
+    - variant: 1
+      format: "script-outline"
+      channel: "TikTok"
+      body: |
+        ฉาก 1 (0–3s): เปิดกล่อง SoClean บนโต๊ะสีดำ
+        ฉาก 2 (3–10s): ดึงทิชชู่ช้าๆ ในแสงสว่าง — ฝุ่นน้อยเห็นได้
+        ฉาก 3 (10–20s): เช็ดโต๊ะสีเข้ม โชว์ว่าฝุ่นตกน้อยกว่า
+        ฉาก 4 (20–25s): คีย์บอร์ด — เช็ดแล้วยังสะอาด ไม่มีคราบขาว
+        ฉาก 5 (25–30s): โชว์แพ็ค + CTA สั่งซื้อที่ TikTok Shop
+      character_count: 282
+      demo_instructions: |
+        - ใช้โต๊ะหรือแผ่นรองสีดำเป็นพื้นหลัง
+        - แสงจากด้านข้าง (backlight) เพื่อให้เห็นฝุ่นหรือไม่มีฝุ่น
+        - ถ่ายความละเอียดสูงเพื่อให้เห็นผิวหน้าของโต๊ะชัดเจน
+        - ไม่ต้องพูดว่า "ไร้ฝุ่น 100%" — ให้ภาพพูดแทน
+      image_direction: "Dark desk surface, side lighting, macro shot showing tissue residue (minimal) vs surface cleanliness"
+  hashtags:
+    - "#SoClean"
+    - "#ทิชชู่SoClean"
+    - "#BNPaper"
+    - "#ฝุ่นน้อย"
+    - "#ทิชชู่ออฟฟิศ"
+    - "#ของใช้ออฟฟิศ"
+  compliance_check:
+    approved_claims_used:
+      - "ฝุ่นน้อย"
+      - "ฝุ่นน้อยเห็นได้"
+    prohibited_terms_detected: []
+    is_safe: true

@@ -1,0 +1,202 @@
+name: "Hashtag Generation"
+slug: "hashtag-generation-v1"
+version: "1.0"
+category: utility
+content_type: hashtags
+channel: multi
+brand: soclean
+description: "Generate a claim-safe, channel-optimised hashtag set for SoClean content"
+purpose: >
+  Generates a curated set of hashtags for SoClean content on TikTok, Facebook, or Instagram.
+  Hashtags are categorised: core brand tags (always include), content-pillar tags, and
+  broad discovery tags. Never uses competitor brand names or prohibited claim terms as hashtags.
+  Output is always DRAFT.
+claim_safety_required: true
+tags: [hashtag, social, tiktok, facebook, instagram, discovery, utility]
+
+variables:
+  - name: content_pillar
+    type: enum
+    required: true
+    description: "Primary content pillar this hashtag set should support"
+    options: [เนียนนุ่ม, สะอาด, ฝุ่นน้อย, คุ้มค่า, เหมาะทุกที่, รีวิวลูกค้า, ซื้อยกลัง]
+    example: "ฝุ่นน้อย"
+  - name: target_channel
+    type: enum
+    required: true
+    description: "Channel where hashtags will be used"
+    options: [TikTok, Facebook, Instagram]
+    example: "TikTok"
+  - name: target_persona
+    type: enum
+    required: true
+    description: "Audience persona this content is for"
+    options: ["มิ้น (Gen Y Household)", "คุณแม่บ้าน (Family)", "พี่โอ๋ (Office)", "เจ้าของร้าน (Reseller)"]
+    example: "พี่โอ๋ (Office)"
+  - name: campaign_theme
+    type: string
+    required: false
+    description: "Optional campaign hashtag to include (e.g. '#SoCleanOffice2026')"
+    example: ""
+  - name: hashtag_count
+    type: integer
+    required: false
+    default: 10
+    description: "Target number of hashtags (TikTok: 5–10, Facebook: 3–5, Instagram: 10–20)"
+    example: 10
+  - name: include_thai_only
+    type: boolean
+    required: false
+    default: false
+    description: "Whether to include only Thai hashtags (no English)"
+    example: false
+
+system_prompt: |
+  You are a social media hashtag strategist for SoClean by BN Paper, Thailand.
+  Your role is to select hashtags that maximise discovery while staying claim-safe and brand-consistent.
+
+  ## Core Brand Hashtags (ALWAYS include these 3)
+  #SoClean
+  #ทิชชู่SoClean
+  #BNPaper
+
+  ## Content Pillar Hashtags (select 2–3 based on pillar)
+  Softness: #ทิชชู่นุ่ม #ทิชชู่หน้า #สัมผัสนุ่ม
+  Low-dust: #ฝุ่นน้อย #ทิชชู่ออฟฟิศ #ทิชชู่ฝุ่นน้อย
+  Value: #คุ้มค่า #ทิชชู่ราคาดี #ซื้อยกลัง
+  Clean feel: #ทิชชู่สะอาด #ของใช้ในบ้าน
+  Reseller: #ซื้อยกลัง #ทิชชู่ราคาส่ง #ตัวแทนจำหน่าย
+  Reviews: #รีวิวทิชชู่ #รีวิวของใช้
+
+  ## Broad Discovery Hashtags (select 2–4 based on persona and channel)
+  General household: #ของใช้ในบ้าน #แม่บ้าน #ของใช้ประจำวัน
+  Office: #ออฟฟิศ #ชีวิตออฟฟิศ #ของใช้ออฟฟิศ
+  Gen Y: #รีวิว #ของดีราคาถูก #ช้อปปิ้ง
+  Reseller: #ร้านค้าออนไลน์ #ขายของออนไลน์ #ธุรกิจออนไลน์
+
+  ## Hashtag Rules (NON-NEGOTIABLE)
+  - NEVER include competitor brand names as hashtags
+  - NEVER include prohibited claim terms in hashtags:
+    No: #ไร้ฝุ่น100%, #dustfree, #antibacterial, #สะอาดที่สุด, #นุ่มที่สุด, #อันดับ1
+    Yes: #ฝุ่นน้อย, #เนียนนุ่ม, #ทิชชู่นุ่ม, #คุ้มค่า
+  - Facebook: max 3–5 hashtags (platform penalises hashtag spam)
+  - TikTok: 5–10 hashtags recommended
+  - Instagram: up to 20 hashtags acceptable
+
+  ## Output Format
+  Respond ONLY with a valid JSON object. No prose, no markdown.
+
+user_prompt: |
+  Generate a hashtag set for SoClean content.
+
+  ## Input Variables
+  - Content pillar: {{content_pillar}}
+  - Target channel: {{target_channel}}
+  - Target persona: {{target_persona}}
+  - Campaign theme hashtag: {{campaign_theme}}
+  - Target hashtag count: {{hashtag_count}}
+  - Thai only: {{include_thai_only}}
+
+  ## Requirements
+  1. Always include the 3 core brand hashtags.
+  2. Select {{hashtag_count}} total hashtags appropriate for {{target_channel}}.
+  3. Categorise each hashtag: core-brand, content-pillar, persona-specific, broad-discovery, campaign.
+  4. If campaign_theme provided, include that hashtag.
+  5. Balance Thai and English hashtags unless include_thai_only is true.
+  6. No prohibited claim terms or competitor names in any hashtag.
+  7. Provide estimated reach level for each: high (>100k posts), medium (10k–100k), niche (<10k).
+
+  Return the JSON output now.
+
+output_format: json
+output_schema:
+  type: object
+  required: [hashtag_set, categorised, channel_note, compliance_check]
+  properties:
+    hashtag_set:
+      type: array
+      items: { type: string }
+      description: "Full hashtag set ready to copy-paste"
+    categorised:
+      type: array
+      items:
+        type: object
+        required: [hashtag, category, estimated_reach, language]
+        properties:
+          hashtag: { type: string }
+          category:
+            type: string
+            enum: [core-brand, content-pillar, persona-specific, broad-discovery, campaign]
+          estimated_reach:
+            type: string
+            enum: [high, medium, niche]
+          language:
+            type: string
+            enum: [thai, english, bilingual]
+    channel_note:
+      type: string
+      description: "Channel-specific usage guidance"
+    compliance_check:
+      type: object
+      required: [prohibited_hashtags_detected, competitor_hashtags_detected, is_safe]
+      properties:
+        prohibited_hashtags_detected: { type: array, items: { type: string } }
+        competitor_hashtags_detected: { type: array, items: { type: string } }
+        is_safe: { type: boolean }
+
+example_input:
+  content_pillar: "ฝุ่นน้อย"
+  target_channel: "TikTok"
+  target_persona: "พี่โอ๋ (Office)"
+  campaign_theme: ""
+  hashtag_count: 8
+  include_thai_only: false
+
+example_output:
+  hashtag_set:
+    - "#SoClean"
+    - "#ทิชชู่SoClean"
+    - "#BNPaper"
+    - "#ฝุ่นน้อย"
+    - "#ทิชชู่ออฟฟิศ"
+    - "#ทิชชู่ฝุ่นน้อย"
+    - "#ออฟฟิศ"
+    - "#ของใช้ออฟฟิศ"
+  categorised:
+    - hashtag: "#SoClean"
+      category: core-brand
+      estimated_reach: medium
+      language: english
+    - hashtag: "#ทิชชู่SoClean"
+      category: core-brand
+      estimated_reach: niche
+      language: thai
+    - hashtag: "#BNPaper"
+      category: core-brand
+      estimated_reach: niche
+      language: english
+    - hashtag: "#ฝุ่นน้อย"
+      category: content-pillar
+      estimated_reach: niche
+      language: thai
+    - hashtag: "#ทิชชู่ออฟฟิศ"
+      category: persona-specific
+      estimated_reach: niche
+      language: thai
+    - hashtag: "#ทิชชู่ฝุ่นน้อย"
+      category: content-pillar
+      estimated_reach: niche
+      language: thai
+    - hashtag: "#ออฟฟิศ"
+      category: broad-discovery
+      estimated_reach: high
+      language: thai
+    - hashtag: "#ของใช้ออฟฟิศ"
+      category: persona-specific
+      estimated_reach: medium
+      language: thai
+  channel_note: "TikTok: 5–10 hashtags is the recommended range. Mix brand-specific and discovery tags. Place hashtags at the END of the caption, not inline."
+  compliance_check:
+    prohibited_hashtags_detected: []
+    competitor_hashtags_detected: []
+    is_safe: true

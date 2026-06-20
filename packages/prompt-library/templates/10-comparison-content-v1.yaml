@@ -1,0 +1,163 @@
+name: "Comparison Content"
+slug: "comparison-content-v1"
+version: "1.0"
+category: generation
+content_type: comparison
+channel: multi
+brand: soclean
+description: "Comparison content highlighting SoClean vs. generic tissue — no competitor names, claim-safe"
+purpose: >
+  Generates content that helps customers understand what makes SoClean different from
+  generic or low-quality tissue — without naming any specific competitor brand.
+  Comparison is framed around product attributes (dust, softness, value), not competitor bashing.
+  Output is always DRAFT — factual comparisons must be verifiable.
+claim_safety_required: true
+tags: [comparison, differentiation, social, tiktok, facebook, shopee]
+
+variables:
+  - name: comparison_angle
+    type: enum
+    required: true
+    description: "The attribute being compared"
+    options: [low-dust, softness, value-per-sheet, 2-ply-vs-1-ply, carton-pricing]
+    example: "low-dust"
+  - name: target_channel
+    type: enum
+    required: true
+    description: "Channel for the content"
+    options: [TikTok, Facebook, Shopee, Lazada]
+    example: "TikTok"
+  - name: format
+    type: enum
+    required: true
+    description: "Content format"
+    options: [caption, post, script-outline, description-section]
+    example: "script-outline"
+  - name: comparison_frame
+    type: enum
+    required: false
+    default: "generic"
+    description: "How to frame the other side of the comparison"
+    options: [generic, "ทิชชู่ทั่วไป", "ทิชชู่ราคาถูก"]
+    example: "ทิชชู่ทั่วไป"
+
+system_prompt: |
+  You are a content strategist and copywriter for SoClean by BN Paper, Thailand.
+  Your role is to create comparison content that showcases SoClean's genuine advantages
+  over generic tissue — without naming any specific competitor brand.
+
+  ## Brand Context
+  - Brand: SoClean | Company: BN Paper
+  - Product: Facial tissue, 2-ply, 180 sheets/box, Pack of 5 (900 sheets/pack)
+  - Genuine differentiators: Reduced dust (ฝุ่นน้อย), 2-ply softness, value pack format
+  - These are real product characteristics — comparisons must be grounded in them
+
+  ## Comparison Rules (NON-NEGOTIABLE)
+  1. NEVER name a specific competitor brand — this creates legal risk.
+  2. Only compare on attributes SoClean can substantiate (dust level, 2-ply vs 1-ply, pack value).
+  3. Do NOT use fear tactics: "ทิชชู่ทั่วไปเป็นอันตราย" or "ฝุ่นทิชชู่ทำให้ป่วย" are prohibited.
+  4. Frame comparison positively: what SoClean does well, not what competitors do wrong.
+  5. Use "ทิชชู่ทั่วไป" or "ทิชชู่ราคาถูก" as generic references — not brand names.
+
+  ## CRITICAL — CLAIM SAFETY RULES
+  NEVER use: ไร้ฝุ่น 100%, dust-free, antibacterial, ฆ่าเชื้อโรค, medically safe,
+  hypoallergenic, dermatologist, สะอาดที่สุด, นุ่มที่สุด, ปลอดภัยที่สุด, ดีที่สุด,
+  อันดับ 1, "ฝุ่นทิชชู่เป็นอันตราย", "ทิชชู่ทั่วไปทำให้ป่วย"
+  USE INSTEAD: ฝุ่นน้อย (relative, not absolute), เนียนนุ่ม, ให้สัมผัสสะอาด, คุ้มค่า
+
+  ## Output Format
+  Respond ONLY with a valid JSON object. No prose, no markdown.
+
+user_prompt: |
+  Generate comparison content for SoClean.
+
+  ## Input Variables
+  - Comparison angle: {{comparison_angle}}
+  - Target channel: {{target_channel}}
+  - Format: {{format}}
+  - Comparison frame: {{comparison_frame}}
+
+  ## Requirements
+  1. The comparison angle is {{comparison_angle}} — only compare on this attribute.
+  2. Reference the other side as "{{comparison_frame}}" — never as a specific brand.
+  3. Frame positively: "SoClean ให้..." rather than "ทิชชู่ทั่วไปทำให้เสีย...".
+  4. All comparative claims must be based on real product specs (2-ply, ฝุ่นน้อย, pack size).
+  5. Format rules:
+     - caption: 50–100 Thai chars
+     - post: 100–200 Thai chars + image direction
+     - script-outline: 4–6 scene bullets for TikTok demo
+     - description-section: 80–150 chars for embedding in Shopee/Lazada description
+  6. Verify all claims — no absolute claims, no fear tactics, no competitor names.
+
+  Return the JSON output now.
+
+output_format: json
+output_schema:
+  type: object
+  required: [comparison_angle, format, content, compliance_check]
+  properties:
+    comparison_angle: { type: string }
+    format: { type: string }
+    content:
+      type: object
+      required: [headline, body]
+      properties:
+        headline: { type: string }
+        body: { type: string }
+        comparison_table:
+          type: array
+          description: "Optional structured comparison table"
+          items:
+            type: object
+            properties:
+              attribute: { type: string }
+              soclean: { type: string }
+              generic: { type: string }
+        image_direction: { type: string }
+        character_count: { type: integer }
+    hashtags:
+      type: array
+      items: { type: string }
+    compliance_check:
+      type: object
+      required: [approved_claims_used, prohibited_terms_detected, competitor_names_detected, is_safe]
+      properties:
+        approved_claims_used: { type: array, items: { type: string } }
+        prohibited_terms_detected: { type: array, items: { type: string } }
+        competitor_names_detected: { type: array, items: { type: string } }
+        is_safe: { type: boolean }
+
+example_input:
+  comparison_angle: "low-dust"
+  target_channel: "TikTok"
+  format: "script-outline"
+  comparison_frame: "ทิชชู่ทั่วไป"
+
+example_output:
+  comparison_angle: "low-dust"
+  format: "script-outline"
+  content:
+    headline: "ทิชชู่ฝุ่นน้อย — เห็นความต่างได้เอง"
+    body: "สาธิตความแตกต่างด้านฝุ่นระหว่าง SoClean กับทิชชู่ทั่วไป บนพื้นผิวสีเข้ม"
+    comparison_table:
+      - attribute: "ฝุ่นหลังใช้"
+        soclean: "ฝุ่นน้อย มองเห็นน้อยกว่า"
+        generic: "ฝุ่นมากกว่า ตกบนพื้นผิว"
+      - attribute: "เนื้อทิชชู่"
+        soclean: "2 ชั้น เนียนนุ่ม"
+        generic: "1–2 ชั้น ขึ้นอยู่กับยี่ห้อ"
+    image_direction: "Side-by-side demo on dark wooden desk — SoClean on left, generic tissue on right; camera zooms to show dust difference on surface"
+    character_count: 248
+  hashtags:
+    - "#SoClean"
+    - "#ทิชชู่SoClean"
+    - "#ฝุ่นน้อย"
+    - "#ทิชชู่ออฟฟิศ"
+    - "#เปรียบเทียบทิชชู่"
+  compliance_check:
+    approved_claims_used:
+      - "ฝุ่นน้อย"
+      - "เนียนนุ่ม"
+    prohibited_terms_detected: []
+    competitor_names_detected: []
+    is_safe: true

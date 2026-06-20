@@ -1,0 +1,166 @@
+name: "Educational Content"
+slug: "educational-content-v1"
+version: "1.0"
+category: generation
+content_type: educational
+channel: multi
+brand: soclean
+description: "Informative, tip-based content about tissue use, care, and everyday life — builds brand trust"
+purpose: >
+  Generates educational and informative content that teaches rather than sells.
+  Topics include how to choose tissue, how to use tissue properly in office/home,
+  storage tips, and everyday life facts. Builds brand credibility and organic reach.
+  Output is always DRAFT — educational claims must be factually grounded.
+claim_safety_required: true
+tags: [educational, informational, tips, organic, trust-building, tiktok, facebook]
+
+variables:
+  - name: topic
+    type: enum
+    required: true
+    description: "Educational topic to cover"
+    options:
+      - "วิธีเลือกทิชชู่ที่ดี"
+      - "ทำไมทิชชู่ถึงมีฝุ่น"
+      - "ทิชชู่ฝุ่นน้อย เหมาะกับออฟฟิศยังไง"
+      - "วิธีเก็บทิชชู่ให้ถูกต้อง"
+      - "ทิชชู่ 2 ชั้น vs 1 ชั้น ต่างกันยังไง"
+      - "900 แผ่นใช้ได้กี่วัน"
+      - "ทิชชู่ใช้ได้ที่ไหนบ้าง"
+    example: "ทิชชู่ฝุ่นน้อย เหมาะกับออฟฟิศยังไง"
+  - name: target_channel
+    type: enum
+    required: true
+    description: "Channel this content will be posted on"
+    options: [TikTok, Facebook, Shopee, multi]
+    example: "TikTok"
+  - name: format
+    type: enum
+    required: true
+    description: "Content format to generate"
+    options: [caption, short-post, listicle, script-outline]
+    example: "caption"
+  - name: tone
+    type: enum
+    required: false
+    default: "practical"
+    description: "Tone of the educational content"
+    options: [practical, playful, warm]
+    example: "practical"
+
+system_prompt: |
+  You are an educational content writer for SoClean by BN Paper, Thailand.
+  Your role is to create informative content that teaches customers useful facts
+  about tissue — while naturally connecting to SoClean's product qualities.
+
+  ## Brand Context
+  - Brand: SoClean | Company: BN Paper
+  - Product: Facial tissue, 2-ply, 180 sheets/box, Pack of 5 (900 sheets/pack)
+  - Key facts: 2-ply is softer than 1-ply; reduced-dust manufacturing; suitable for face, hands, desk
+  - Positioning: เนียนนุ่ม, ฝุ่นน้อย — these are naturally connected to the educational topics
+
+  ## Educational Content Rules
+  - All facts must be grounded in product specifications or general knowledge — no invented data.
+  - Connect facts to SoClean benefits naturally — not forced or salesy.
+  - Do not make medical or health claims (e.g., do not claim tissue is antibacterial or protects health).
+  - Keep value-add high — reader should learn something useful, not just receive a sales pitch.
+
+  ## CRITICAL — CLAIM SAFETY RULES
+  NEVER use: ไร้ฝุ่น 100%, dust-free, antibacterial, ฆ่าเชื้อโรค, medically safe,
+  hypoallergenic, dermatologist, สะอาดที่สุด, นุ่มที่สุด, ปลอดภัยที่สุด, ดีที่สุด, อันดับ 1
+  USE INSTEAD: ฝุ่นน้อย, เนียนนุ่ม, ให้สัมผัสสะอาด, เหมาะกับการใช้งานทุกวัน, คุ้มค่า
+
+  ## Output Format
+  Respond ONLY with a valid JSON object. No prose, no markdown.
+
+user_prompt: |
+  Generate educational content for SoClean about: {{topic}}
+
+  ## Input Variables
+  - Topic: {{topic}}
+  - Target channel: {{target_channel}}
+  - Format: {{format}}
+  - Tone: {{tone}}
+
+  ## Requirements
+  1. Lead with the educational insight — make it genuinely useful before connecting to SoClean.
+  2. Connect naturally to SoClean's ฝุ่นน้อย / เนียนนุ่ม / คุ้มค่า qualities where relevant.
+  3. Format rules:
+     - caption: 50–100 Thai chars + hashtags
+     - short-post: 100–200 Thai chars
+     - listicle: 3–5 bullet points with brief explanations
+     - script-outline: 4–6 scene bullets for TikTok video
+  4. Tone should match {{tone}} — practical is direct and informative, playful is fun and light.
+  5. Verify all claims — educational content must be factually accurate and claim-safe.
+
+  Return the JSON output now.
+
+output_format: json
+output_schema:
+  type: object
+  required: [topic, format, content, compliance_check]
+  properties:
+    topic: { type: string }
+    format: { type: string }
+    content:
+      type: object
+      required: [headline, body]
+      properties:
+        headline: { type: string }
+        body: { type: string }
+        bullet_points:
+          type: array
+          items:
+            type: object
+            properties:
+              point: { type: string }
+              explanation: { type: string }
+        soclean_connection: { type: string, description: "Natural tie-in to SoClean product" }
+        character_count: { type: integer }
+    hashtags:
+      type: array
+      items: { type: string }
+    compliance_check:
+      type: object
+      required: [approved_claims_used, prohibited_terms_detected, is_safe, factual_basis]
+      properties:
+        approved_claims_used: { type: array, items: { type: string } }
+        prohibited_terms_detected: { type: array, items: { type: string } }
+        is_safe: { type: boolean }
+        factual_basis: { type: string, description: "Source/basis for key facts stated in the content" }
+
+example_input:
+  topic: "ทิชชู่ฝุ่นน้อย เหมาะกับออฟฟิศยังไง"
+  target_channel: "Facebook"
+  format: "listicle"
+  tone: "practical"
+
+example_output:
+  topic: "ทิชชู่ฝุ่นน้อย เหมาะกับออฟฟิศยังไง"
+  format: "listicle"
+  content:
+    headline: "3 เหตุผลที่ออฟฟิศควรใช้ทิชชู่ฝุ่นน้อย"
+    body: "ฝุ่นทิชชู่ทำให้อุปกรณ์สกปรกโดยไม่รู้ตัว — เลือกทิชชู่ที่ใช่ช่วยได้มาก"
+    bullet_points:
+      - point: "ฝุ่นตกบนคีย์บอร์ดและหน้าจอน้อยลง"
+        explanation: "ทิชชู่ที่มีฝุ่นน้อยกว่าจะทิ้งคราบขาวบนอุปกรณ์น้อยลง ดูแลรักษาง่ายกว่า"
+      - point: "เนียนนุ่ม เหมาะสำหรับการใช้งานต่อเนื่อง"
+        explanation: "ออฟฟิศใช้ทิชชู่บ่อย ทิชชู่ที่นุ่มสบายกว่าช่วยให้ใช้งานสะดวกตลอดวัน"
+      - point: "ซื้อยกลัง ประหยัดงบออฟฟิศ"
+        explanation: "สั่งยกลัง 50 แพ็ค = 45,000 แผ่น ราคาต่อแผ่นประหยัดกว่า"
+    soclean_connection: "SoClean ทิชชู่ฝุ่นน้อย เนียนนุ่ม เหมาะกับทุกโต๊ะในออฟฟิศ ซื้อยกลังได้"
+    character_count: 412
+  hashtags:
+    - "#SoClean"
+    - "#ทิชชู่SoClean"
+    - "#ทิชชู่ออฟฟิศ"
+    - "#ฝุ่นน้อย"
+    - "#ออฟฟิศไลฟ์"
+  compliance_check:
+    approved_claims_used:
+      - "ฝุ่นน้อย"
+      - "เนียนนุ่ม"
+      - "ซื้อยกลัง ประหยัด"
+    prohibited_terms_detected: []
+    is_safe: true
+    factual_basis: "Carton math: 50 packs × 900 sheets = 45,000 sheets. Low-dust positioning based on manufacturing intent (ฝุ่นน้อย). Softness based on 2-ply construction."

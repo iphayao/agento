@@ -1,0 +1,194 @@
+name: "Promotion Campaign Content"
+slug: "promotion-campaign-v1"
+version: "1.0"
+category: generation
+content_type: campaign
+channel: multi
+brand: soclean
+description: "Multi-channel promotional content set for a SoClean campaign — post, caption, and banner copy"
+purpose: >
+  Generates a coordinated set of promotional content for a SoClean sales campaign
+  (flash sale, bundle promotion, seasonal deal, or regular discount).
+  Produces matched copy for TikTok, Facebook, and Shopee/Lazada from one brief.
+  Output is always DRAFT — all pricing claims must be verified before publishing.
+claim_safety_required: true
+tags: [campaign, promotion, multi-channel, sale, flash-sale, seasonal]
+
+variables:
+  - name: campaign_name
+    type: string
+    required: true
+    description: "Name or theme of the campaign"
+    example: "ซื้อ 2 แพ็ค ลดพิเศษ"
+  - name: campaign_type
+    type: enum
+    required: true
+    description: "Type of promotion"
+    options: [flash-sale, bundle, seasonal, regular-discount, new-arrival, carton-deal]
+    example: "bundle"
+  - name: discount_or_offer
+    type: string
+    required: true
+    description: "The actual offer — must be factual (e.g. 'ซื้อ 2 แพ็ค ลด 20%', 'แพ็คละ 89 บาท')"
+    example: "ซื้อ 2 แพ็ค ลด 15%"
+  - name: campaign_start_date
+    type: string
+    required: false
+    description: "Campaign start date (YYYY-MM-DD) — used for urgency messaging"
+    example: "2026-07-01"
+  - name: campaign_end_date
+    type: string
+    required: false
+    description: "Campaign end date (YYYY-MM-DD)"
+    example: "2026-07-07"
+  - name: focus_pillar
+    type: enum
+    required: true
+    description: "Content pillar to pair with the promotion"
+    options: [เนียนนุ่ม, ฝุ่นน้อย, คุ้มค่า, ซื้อยกลัง]
+    example: "คุ้มค่า"
+  - name: channels
+    type: array
+    required: true
+    description: "Channels to generate content for"
+    options: [TikTok, Facebook, Shopee, Lazada]
+    example: ["TikTok", "Facebook", "Shopee"]
+
+system_prompt: |
+  You are a campaign copywriter for SoClean by BN Paper, Thailand.
+  You create multi-channel promotional content that is honest, claim-safe, and drives conversion.
+
+  ## Brand Context
+  - Brand: SoClean | Company: BN Paper
+  - Product: Facial tissue, 2-ply, 180 sheets/box, Pack of 5 (900 sheets/pack)
+  - Positioning: "สะอาด เนียนนุ่ม ฝุ่นน้อย" — honest value
+
+  ## Campaign Copy Rules
+  - Promotional claims must be factual (verified pricing, actual discount — never fabricate).
+  - Urgency language is allowed (end-date countdown) but must be honest.
+  - Do not use fake scarcity ("สินค้าเหลือน้อย") unless factually true.
+  - Channel-appropriate format:
+    TikTok caption: 50–100 chars + hashtags
+    Facebook post: 100–200 chars + emoji
+    Shopee/Lazada banner copy: 30–60 chars (for graphic overlays)
+
+  ## CRITICAL — CLAIM SAFETY RULES
+  NEVER use: ไร้ฝุ่น 100%, dust-free, antibacterial, ฆ่าเชื้อโรค, medically safe,
+  hypoallergenic, dermatologist, สะอาดที่สุด, นุ่มที่สุด, ปลอดภัยที่สุด, ดีที่สุด,
+  อันดับ 1, ถูกที่สุด (without verified basis)
+  USE INSTEAD: ฝุ่นน้อย, เนียนนุ่ม, คุ้มค่า, ราคาดี, เหมาะทุกวัน
+
+  ## Output Format
+  Respond ONLY with a valid JSON object. No prose, no markdown.
+
+user_prompt: |
+  Generate multi-channel promotional content for a SoClean campaign.
+
+  ## Input Variables
+  - Campaign name: {{campaign_name}}
+  - Campaign type: {{campaign_type}}
+  - Discount / offer: {{discount_or_offer}}
+  - Start date: {{campaign_start_date}}
+  - End date: {{campaign_end_date}}
+  - Focus pillar: {{focus_pillar}}
+  - Channels: {{channels}}
+
+  ## Requirements
+  1. Generate copy for each channel in {{channels}}.
+  2. The offer "{{discount_or_offer}}" must appear clearly and accurately in all pieces.
+  3. If end date is provided, include a factual urgency message.
+  4. Pair product benefit ({{focus_pillar}}) with the promotional offer.
+  5. TikTok: punchy caption 50–100 chars + hashtags.
+  6. Facebook: warm post 100–200 chars + emoji.
+  7. Shopee/Lazada: short banner headline 30–60 chars (no emoji).
+  8. Verify all claims — promotional copy must still be claim-safe.
+
+  Return the JSON output now.
+
+output_format: json
+output_schema:
+  type: object
+  required: [campaign_summary, channel_content, hashtags, compliance_check]
+  properties:
+    campaign_summary:
+      type: object
+      properties:
+        name: { type: string }
+        offer: { type: string }
+        dates: { type: string }
+    channel_content:
+      type: array
+      items:
+        type: object
+        required: [channel, format, copy, character_count]
+        properties:
+          channel: { type: string }
+          format: { type: string }
+          copy: { type: string }
+          character_count: { type: integer }
+          notes: { type: string }
+    hashtags:
+      type: array
+      items: { type: string }
+    compliance_check:
+      type: object
+      required: [approved_claims_used, prohibited_terms_detected, is_safe, pricing_verified_by_human]
+      properties:
+        approved_claims_used: { type: array, items: { type: string } }
+        prohibited_terms_detected: { type: array, items: { type: string } }
+        is_safe: { type: boolean }
+        pricing_verified_by_human:
+          type: boolean
+          description: "Always false from AI — human must verify pricing claims before publishing"
+
+example_input:
+  campaign_name: "ซื้อ 2 แพ็ค ลดพิเศษ"
+  campaign_type: "bundle"
+  discount_or_offer: "ซื้อ 2 แพ็ค ลด 15%"
+  campaign_start_date: "2026-07-01"
+  campaign_end_date: "2026-07-07"
+  focus_pillar: "คุ้มค่า"
+  channels: ["TikTok", "Facebook", "Shopee"]
+
+example_output:
+  campaign_summary:
+    name: "ซื้อ 2 แพ็ค ลดพิเศษ"
+    offer: "ซื้อ 2 แพ็ค ลด 15%"
+    dates: "1–7 กรกฎาคม 2026"
+  channel_content:
+    - channel: "TikTok"
+      format: "caption"
+      copy: "ซื้อ 2 แพ็ค ลด 15% ถึง 7 ก.ค. นี้! SoClean เนียนนุ่ม คุ้มกว่าเดิม สั่งเลย 🛒"
+      character_count: 76
+      notes: "Pair with product demo or value-math video"
+    - channel: "Facebook"
+      format: "post"
+      copy: |
+        โปรพิเศษ! ซื้อ 2 แพ็ค ลด 15% ถึง 7 กรกฎาคมนี้เท่านั้น
+
+        SoClean ทิชชู่ 2 ชั้น 900 แผ่น/แพ็ค
+        เนียนนุ่ม ฝุ่นน้อย คุ้มค่าสำหรับบ้านและออฟฟิศ
+
+        สั่งได้เลยที่ Shopee / Lazada / TikTok Shop 🛒
+      character_count: 198
+      notes: "Use with product flat-lay image; confirm pricing before posting"
+    - channel: "Shopee"
+      format: "banner-headline"
+      copy: "ซื้อ 2 แพ็ค ลด 15% — SoClean เนียนนุ่ม ฝุ่นน้อย"
+      character_count: 49
+      notes: "For Shopee listing banner graphic overlay — no emoji"
+  hashtags:
+    - "#SoClean"
+    - "#ทิชชู่SoClean"
+    - "#โปรทิชชู่"
+    - "#คุ้มค่า"
+    - "#ของใช้ในบ้าน"
+  compliance_check:
+    approved_claims_used:
+      - "เนียนนุ่ม"
+      - "ฝุ่นน้อย"
+      - "คุ้มค่า"
+      - "900 แผ่น/แพ็ค"
+    prohibited_terms_detected: []
+    is_safe: true
+    pricing_verified_by_human: false

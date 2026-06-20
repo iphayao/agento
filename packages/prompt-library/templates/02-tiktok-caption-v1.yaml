@@ -1,0 +1,158 @@
+name: "TikTok Caption"
+slug: "tiktok-caption-v1"
+version: "1.0"
+category: generation
+content_type: caption
+channel: tiktok
+brand: soclean
+description: "Short TikTok caption (50–100 Thai chars) with hashtags for SoClean videos"
+purpose: >
+  Generates a concise, punchy TikTok caption with hashtags for a SoClean video post.
+  Use this template after the video script is approved or when writing captions for
+  existing footage. Output is always DRAFT — requires human review.
+claim_safety_required: true
+tags: [tiktok, caption, hashtag, social, short-form]
+
+variables:
+  - name: content_pillar
+    type: enum
+    required: true
+    description: "Content pillar this caption should highlight"
+    options: [เนียนนุ่ม, สะอาด, ฝุ่นน้อย, คุ้มค่า, เหมาะทุกที่, รีวิวลูกค้า, ซื้อยกลัง]
+    example: "เนียนนุ่ม"
+  - name: video_summary
+    type: string
+    required: true
+    description: "One or two sentence summary of what the video shows"
+    example: "วิดีโอแสดงการเปิดกล่อง SoClean และสัมผัสความนุ่มของทิชชู่"
+  - name: tone
+    type: enum
+    required: false
+    default: warm
+    description: "Tone of the caption"
+    options: [playful, warm, practical]
+    example: "warm"
+  - name: include_cta
+    type: boolean
+    required: false
+    default: true
+    description: "Whether to include a short call-to-action phrase in the caption"
+    example: true
+  - name: cta_channel
+    type: string
+    required: false
+    description: "Where to direct viewers (e.g. 'TikTok Shop', 'Shopee', 'Lazada')"
+    example: "TikTok Shop"
+  - name: caption_count
+    type: integer
+    required: false
+    default: 3
+    description: "Number of caption variants to generate (1–5)"
+    example: 3
+
+system_prompt: |
+  You are a TikTok copywriter for SoClean, a facial tissue brand by BN Paper, Thailand.
+
+  ## Brand Context
+  - Brand: SoClean | Company: BN Paper | Market: Thailand
+  - Product: Facial tissue, 2-ply, 180 sheets/box, Pack of 5 (900 sheets/pack)
+  - Positioning: "สะอาด เนียนนุ่ม ฝุ่นน้อย"
+  - Language: Thai conversational (ภาษาพูด) — native-feeling, not corporate
+  - Caption length: 50–100 Thai characters (excluding hashtags)
+  - Emoji: maximum 1–2 per caption, only where natural
+  - Hashtags: always include #SoClean #ทิชชู่SoClean #BNPaper; add 3–5 context hashtags
+
+  ## CRITICAL — CLAIM SAFETY RULES
+  NEVER use: ไร้ฝุ่น 100%, dust-free, antibacterial, ฆ่าเชื้อโรค, medically safe,
+  hypoallergenic, dermatologist, สะอาดที่สุด, นุ่มที่สุด, ปลอดภัยที่สุด, ดีที่สุด, อันดับ 1
+  USE INSTEAD: ฝุ่นน้อย, เนียนนุ่ม, ให้สัมผัสสะอาด, เหมาะกับการใช้งานทุกวัน, คุ้มค่า
+
+  ## Output Format
+  Respond ONLY with a valid JSON object. No prose, no markdown.
+
+user_prompt: |
+  Generate TikTok caption variants for SoClean.
+
+  ## Input Variables
+  - Content pillar: {{content_pillar}}
+  - Video summary: {{video_summary}}
+  - Tone: {{tone}}
+  - Include CTA: {{include_cta}}
+  - CTA channel: {{cta_channel}}
+  - Number of variants: {{caption_count}}
+
+  ## Requirements
+  1. Each caption body is 50–100 Thai characters (not counting hashtags).
+  2. Tone matches {{tone}} — warm is approachable, playful is energetic, practical is direct.
+  3. If include_cta is true, add a short CTA phrase pointing to {{cta_channel}}.
+  4. Provide {{caption_count}} distinct variants with different angles.
+  5. All variants must share the same hashtag set.
+  6. Verify every word against claim safety rules before outputting.
+
+  Return the JSON output now.
+
+output_format: json
+output_schema:
+  type: object
+  required: [captions, hashtags, compliance_check]
+  properties:
+    captions:
+      type: array
+      description: "Caption variants — length equals caption_count"
+      items:
+        type: object
+        required: [variant, body, character_count, cta_included]
+        properties:
+          variant: { type: integer }
+          body: { type: string, description: "Caption text without hashtags" }
+          character_count: { type: integer }
+          cta_included: { type: boolean }
+    hashtags:
+      type: array
+      items: { type: string }
+      description: "Shared hashtag list for all variants"
+    compliance_check:
+      type: object
+      required: [approved_claims_used, prohibited_terms_detected, is_safe]
+      properties:
+        approved_claims_used: { type: array, items: { type: string } }
+        prohibited_terms_detected: { type: array, items: { type: string } }
+        is_safe: { type: boolean }
+
+example_input:
+  content_pillar: "เนียนนุ่ม"
+  video_summary: "วิดีโอแสดงการดึงทิชชู่ SoClean ออกจากกล่องในโหมดสโลว์โมชัน เน้นสัมผัสนุ่ม"
+  tone: "warm"
+  include_cta: true
+  cta_channel: "TikTok Shop"
+  caption_count: 3
+
+example_output:
+  captions:
+    - variant: 1
+      body: "สัมผัสนุ่มตั้งแต่แผ่นแรก ทิชชู่ SoClean เนียนนุ่ม ใช้ได้ทุกวัน สั่งได้เลย 🤍"
+      character_count: 63
+      cta_included: true
+    - variant: 2
+      body: "ลูกค้าบอกว่านุ่ม — ลองเองก็รู้ SoClean ทิชชู่ 2 ชั้น 180 แผ่น สั่งที่ TikTok Shop"
+      character_count: 77
+      cta_included: true
+    - variant: 3
+      body: "ทิชชู่ที่ใช้แล้วอยากสั่งซ้ำ เนียนนุ่ม เหมาะทุกวัน 🙌"
+      character_count: 52
+      cta_included: false
+  hashtags:
+    - "#SoClean"
+    - "#ทิชชู่SoClean"
+    - "#BNPaper"
+    - "#ทิชชู่นุ่ม"
+    - "#ของใช้ในบ้าน"
+    - "#ทิชชู่หน้า"
+  compliance_check:
+    approved_claims_used:
+      - "สัมผัสนุ่ม"
+      - "เนียนนุ่ม"
+      - "เหมาะทุกวัน"
+      - "ลูกค้าบอกว่านุ่ม"
+    prohibited_terms_detected: []
+    is_safe: true

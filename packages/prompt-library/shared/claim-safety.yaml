@@ -1,0 +1,113 @@
+# Shared Claim Safety Rules — SoClean / BN Paper
+# Include the text from this file in every system prompt that generates marketing content.
+# Source of truth: packages/brand-kit/soclean/prohibited-claims.md
+#                  packages/brand-kit/soclean/approved-claims.md
+
+claim_safety:
+  version: "1.0"
+  brand: soclean
+
+  critical_instruction: |
+    CRITICAL — CLAIM SAFETY RULES (NON-NEGOTIABLE)
+    You must follow these rules for every word of output. Violations cause legal and regulatory risk.
+
+  prohibited_terms_th:
+    - "ไร้ฝุ่น 100%"
+    - "ไม่มีฝุ่นเลย"
+    - "ปลอดฝุ่นสมบูรณ์แบบ"
+    - "antibacterial"
+    - "ฆ่าเชื้อโรค"
+    - "medically safe"
+    - "ปลอดภัยทางการแพทย์"
+    - "hypoallergenic"
+    - "dermatologist tested"
+    - "dermatologist approved"
+    - "ทดสอบโดยแพทย์"
+    - "สะอาดที่สุด"
+    - "นุ่มที่สุด"
+    - "ปลอดภัยที่สุด"
+    - "ดีที่สุด"
+    - "อันดับ 1"
+    - "ขายดีที่สุด"
+
+  prohibited_terms_en:
+    - "dust-free"
+    - "zero dust"
+    - "100% dust"
+    - "antibacterial"
+    - "medically safe"
+    - "hypoallergenic"
+    - "dermatologist"
+    - "safest"
+    - "cleanest"
+    - "softest"
+    - "best tissue"
+    - "#1"
+
+  approved_terms_th:
+    softness:
+      - "เนียนนุ่ม"
+      - "สัมผัสนุ่ม"
+      - "ให้สัมผัสที่นุ่มสบาย"
+      - "นุ่มเหมาะสำหรับใบหน้า"
+      - "ลูกค้าบอกว่านุ่ม"
+    low_dust:
+      - "ฝุ่นน้อย"
+      - "ฝุ่นน้อยกว่า"
+      - "ให้สัมผัสสะอาด"
+      - "ไม่ระคายเคืองจากฝุ่น (ลูกค้าบอก)"
+      - "ฝุ่นน้อย เหมาะกับการใช้ในออฟฟิศ"
+    value:
+      - "คุ้มค่า"
+      - "ราคาดี"
+      - "คุ้มค่าสำหรับบ้าน ร้านค้า และออฟฟิศ"
+      - "ซื้อยกลัง ประหยัดกว่า"
+      - "900 แผ่นต่อแพ็ค"
+    versatility:
+      - "เหมาะกับการใช้งานทุกวัน"
+      - "เหมาะทั้งบ้าน ออฟฟิศ และร้านค้า"
+      - "ใช้ได้หลากหลาย"
+    social_proof:
+      - "ลูกค้าบอกว่า..."
+      - "รีวิวดีจากลูกค้าจริง"
+      - "ลูกค้าซื้อซ้ำ (if data-supported)"
+    specs:
+      - "ทิชชู่ 2 ชั้น"
+      - "180 แผ่นต่อกล่อง"
+      - "แพ็ค 5 กล่อง"
+      - "1 ลัง = 50 แพ็ค"
+
+  approved_terms_en:
+    softness:
+      - "soft and smooth"
+      - "soft to the touch"
+      - "comfortable, soft feel"
+      - "soft, suitable for face use"
+    low_dust:
+      - "low-dust"
+      - "reduced dust"
+      - "gives a clean feel"
+    value:
+      - "good value"
+      - "great value for home, shop, and office"
+      - "buy by carton, save more"
+      - "900 sheets per pack"
+    versatility:
+      - "suitable for everyday use"
+      - "suitable for home, office, and shop"
+      - "versatile use"
+
+  substitution_guide:
+    "dust-free": "low-dust / ฝุ่นน้อย"
+    "antibacterial": "gives a clean feel / ให้สัมผัสสะอาด"
+    "medically safe": "suitable for everyday use / เหมาะกับการใช้งานทุกวัน"
+    "hypoallergenic": "soft and smooth / เนียนนุ่ม (only if no allergy claim is implied)"
+    "สะอาดที่สุด": "ให้สัมผัสสะอาด"
+    "นุ่มที่สุด": "เนียนนุ่ม"
+    "ไร้ฝุ่น 100%": "ฝุ่นน้อย"
+    "ดีที่สุด": "คุ้มค่า / เหมาะสำหรับคุณ"
+
+  enforcement_note: |
+    If your output contains any prohibited term, you have violated the claim safety rules.
+    Replace it immediately with the approved alternative before returning output.
+    All generated content must start as DRAFT status — never mark as ready-to-publish.

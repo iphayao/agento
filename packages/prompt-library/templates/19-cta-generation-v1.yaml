@@ -1,0 +1,210 @@
+name: "CTA Generation"
+slug: "cta-generation-v1"
+version: "1.0"
+category: utility
+content_type: cta
+channel: multi
+brand: soclean
+description: "Generate call-to-action phrases for SoClean content across channels and funnel stages"
+purpose: >
+  Generates a set of call-to-action (CTA) phrases for SoClean content.
+  CTAs vary by channel, funnel stage (awareness → purchase → reseller), and tone.
+  Multiple variants are generated so the marketer can select the best fit.
+  Output is always DRAFT.
+claim_safety_required: false
+tags: [cta, call-to-action, conversion, utility, tiktok, facebook, shopee, line]
+
+variables:
+  - name: target_channel
+    type: enum
+    required: true
+    description: "Channel the CTA will appear on"
+    options: [TikTok, Facebook, Shopee, Lazada, LINE, any]
+    example: "TikTok"
+  - name: funnel_stage
+    type: enum
+    required: true
+    description: "Customer funnel stage this CTA targets"
+    options: [awareness, interest, consideration, purchase, repeat-purchase, reseller-inquiry]
+    example: "purchase"
+  - name: destination
+    type: enum
+    required: true
+    description: "Where the CTA directs customers"
+    options:
+      - "TikTok Shop"
+      - "Shopee"
+      - "Lazada"
+      - "LINE (inquiry)"
+      - "Facebook (DM)"
+      - "save-follow"
+      - "share"
+    example: "TikTok Shop"
+  - name: tone
+    type: enum
+    required: false
+    default: warm
+    description: "Tone of the CTA"
+    options: [warm, direct, playful, professional]
+    example: "warm"
+  - name: cta_count
+    type: integer
+    required: false
+    default: 6
+    description: "Number of CTA variants to generate (3–10)"
+    example: 6
+
+system_prompt: |
+  You are a conversion copywriter for SoClean by BN Paper, Thailand.
+  Your role is to generate effective call-to-action phrases that match the channel, funnel stage, and tone.
+
+  ## CTA Writing Rules
+  1. Thai language: natural, not pushy.
+  2. Short: 5–15 Thai words maximum per CTA.
+  3. Channel-appropriate:
+     - TikTok: energetic, emoji optional (1 max)
+     - Facebook: warm, inviting
+     - Shopee/Lazada: direct, transactional
+     - LINE: polite, conversational (ครับ/ค่ะ)
+  4. Funnel-matched:
+     - awareness: ติดตามดูก่อนนะ, กดบันทึกไว้ก่อนเลย
+     - interest: ดูรีวิวเพิ่มเติม, ดูสินค้าได้เลย
+     - consideration: เช็คราคาได้เลยที่ Shopee/TikTok Shop
+     - purchase: สั่งซื้อได้เลย, หยิบใส่ตะกร้าเลย
+     - repeat-purchase: สั่งซ้ำได้ที่ร้านเดิมนะคะ
+     - reseller-inquiry: ทักมาสอบถามราคาส่งได้เลย
+
+  ## CRITICAL — CLAIM SAFETY RULES FOR CTAs
+  CTAs should not contain claims — they direct action only.
+  NEVER embed prohibited claims in CTAs: ไร้ฝุ่น 100%, ปลอดภัยที่สุด, etc.
+  CTAs should be action-oriented: สั่งเลย, ทักมา, ดูเพิ่มเติม, กดเลย
+
+  ## Output Format
+  Respond ONLY with a valid JSON object. No prose, no markdown.
+
+user_prompt: |
+  Generate CTA variants for SoClean.
+
+  ## Input Variables
+  - Target channel: {{target_channel}}
+  - Funnel stage: {{funnel_stage}}
+  - Destination: {{destination}}
+  - Tone: {{tone}}
+  - Number of variants: {{cta_count}}
+
+  ## Requirements
+  1. Generate {{cta_count}} distinct CTA variants.
+  2. All CTAs appropriate for {{target_channel}} and {{funnel_stage}}.
+  3. All CTAs direct to {{destination}}.
+  4. Mix short (5–8 words) and medium (9–15 words) CTAs.
+  5. Include 1–2 CTAs with emoji ({{target_channel}}-appropriate only).
+  6. Score each on: Urgency (1–5), Clarity (1–5), Natural feel (1–5).
+  7. No prohibited claims embedded in CTAs.
+
+  Return the JSON output now.
+
+output_format: json
+output_schema:
+  type: object
+  required: [ctas, recommended_ctas, usage_guide]
+  properties:
+    ctas:
+      type: array
+      items:
+        type: object
+        required: [id, text, word_count, has_emoji, scores]
+        properties:
+          id: { type: integer }
+          text: { type: string }
+          word_count: { type: integer }
+          has_emoji: { type: boolean }
+          scores:
+            type: object
+            properties:
+              urgency: { type: integer, minimum: 1, maximum: 5 }
+              clarity: { type: integer, minimum: 1, maximum: 5 }
+              natural: { type: integer, minimum: 1, maximum: 5 }
+          best_for: { type: string }
+    recommended_ctas:
+      type: array
+      items:
+        type: object
+        properties:
+          id: { type: integer }
+          use_case: { type: string }
+    usage_guide:
+      type: string
+      description: "Brief guidance on how to use these CTAs in context"
+
+example_input:
+  target_channel: "TikTok"
+  funnel_stage: "purchase"
+  destination: "TikTok Shop"
+  tone: "warm"
+  cta_count: 6
+
+example_output:
+  ctas:
+    - id: 1
+      text: "สั่งซื้อได้เลยที่ TikTok Shop 🛒"
+      word_count: 7
+      has_emoji: true
+      scores:
+        urgency: 4
+        clarity: 5
+        natural: 4
+      best_for: "End of product demo video"
+    - id: 2
+      text: "กดที่ลิงก์ด้านล่างเลยนะคะ"
+      word_count: 6
+      has_emoji: false
+      scores:
+        urgency: 3
+        clarity: 5
+        natural: 5
+      best_for: "During TikTok Live or voiceover"
+    - id: 3
+      text: "หยิบใส่ตะกร้าได้เลยค่ะ 🤍"
+      word_count: 6
+      has_emoji: true
+      scores:
+        urgency: 4
+        clarity: 5
+        natural: 5
+      best_for: "Caption ending or video final text overlay"
+    - id: 4
+      text: "สั่ง 1 แพ็คทดลองก่อนก็ได้นะคะ"
+      word_count: 8
+      has_emoji: false
+      scores:
+        urgency: 2
+        clarity: 5
+        natural: 5
+      best_for: "Consideration stage — low-pressure CTA for first-time buyers"
+    - id: 5
+      text: "ลองสั่งดูสักครั้ง แล้วจะซื้อซ้ำเอง"
+      word_count: 8
+      has_emoji: false
+      scores:
+        urgency: 3
+        clarity: 4
+        natural: 5
+      best_for: "Social proof context — after sharing a positive review"
+    - id: 6
+      text: "TikTok Shop รอรับอยู่เลยค่ะ"
+      word_count: 5
+      has_emoji: false
+      scores:
+        urgency: 3
+        clarity: 5
+        natural: 4
+      best_for: "Short text overlay in final 2 seconds of video"
+  recommended_ctas:
+    - id: 3
+      use_case: "Primary CTA for most TikTok purchase videos — warm, clear, natural"
+    - id: 1
+      use_case: "When pointing to TikTok Shop link specifically — higher urgency"
+  usage_guide: >
+    Place CTAs in the final 3–5 seconds of TikTok videos as text overlay or voiceover.
+    For captions: use 1 CTA at the end of the caption body, before hashtags.
+    Avoid stacking multiple CTAs — pick one and commit to it per post.

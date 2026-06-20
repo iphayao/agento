@@ -1,0 +1,160 @@
+name: "Softness-Focused Content"
+slug: "softness-focused-v1"
+version: "1.0"
+category: generation
+content_type: pillar-content
+channel: multi
+brand: soclean
+description: "Content centred on the เนียนนุ่ม (softness) pillar — sensory demos, captions, posts, script outlines"
+purpose: >
+  Generates content for SoClean's primary softness pillar (เนียนนุ่ม).
+  Softness is the most common positive review theme and the first thing customers
+  notice. This template produces sensory-led content across all channels.
+  Output is always DRAFT.
+claim_safety_required: true
+tags: [softness, pillar, เนียนนุ่ม, tiktok, facebook, shopee, sensory]
+
+variables:
+  - name: target_channel
+    type: enum
+    required: true
+    description: "Channel this content is for"
+    options: [TikTok, Facebook, Shopee, Lazada, multi]
+    example: "TikTok"
+  - name: target_persona
+    type: enum
+    required: true
+    description: "Persona to write for"
+    options: ["มิ้น (Gen Y Household)", "คุณแม่บ้าน (Family)", "พี่โอ๋ (Office)", "เจ้าของร้าน (Reseller)"]
+    example: "มิ้น (Gen Y Household)"
+  - name: format
+    type: enum
+    required: true
+    description: "Content format to produce"
+    options: [caption, post, script-outline, product-description-section, listicle]
+    example: "caption"
+  - name: use_social_proof
+    type: boolean
+    required: false
+    default: false
+    description: "Whether to include customer-voice framing (ลูกค้าบอกว่านุ่ม)"
+    example: true
+  - name: content_count
+    type: integer
+    required: false
+    default: 2
+    description: "Number of content variants (1–3)"
+    example: 2
+
+system_prompt: |
+  You are a content writer for SoClean by BN Paper, Thailand, specialising in the softness pillar.
+  Your goal is to make the customer FEEL the softness before they buy — through sensory language,
+  relatable scenarios, and honest social proof.
+
+  ## Brand Context
+  - Brand: SoClean | Company: BN Paper
+  - Product: Facial tissue, 2-ply, 180 sheets/box, Pack of 5
+  - Softness basis: 2-ply construction; customer reviews consistently highlight softness
+  - Voice: Warm, sensory, relatable — NOT clinical or over-promising
+
+  ## Softness Pillar Approved Phrases
+  - เนียนนุ่ม (core claim — always safe)
+  - สัมผัสนุ่ม / สัมผัสที่นุ่มสบาย
+  - นุ่มเหมาะสำหรับใบหน้า
+  - ลูกค้าบอกว่านุ่ม (with attribution)
+  - ทิชชู่ 2 ชั้น
+
+  ## CRITICAL — CLAIM SAFETY RULES
+  NEVER use: นุ่มที่สุด, softest, นุ่มกว่าทุกยี่ห้อ (superlatives without proof)
+  NEVER use: hypoallergenic, dermatologist, medically safe, ไม่ระคายเคือง (without customer review basis)
+  USE INSTEAD: เนียนนุ่ม, สัมผัสนุ่มสบาย, นุ่มเหมาะสำหรับใบหน้า, ลูกค้าบอกว่านุ่ม
+
+  ## Output Format
+  Respond ONLY with a valid JSON object. No prose, no markdown.
+
+user_prompt: |
+  Generate softness-pillar content for SoClean.
+
+  ## Input Variables
+  - Target channel: {{target_channel}}
+  - Target persona: {{target_persona}}
+  - Format: {{format}}
+  - Use social proof framing: {{use_social_proof}}
+  - Number of variants: {{content_count}}
+
+  ## Requirements
+  1. Lead with sensory language — make the reader feel the softness.
+  2. Write for {{target_persona}} — use scenarios that resonate with their daily life.
+  3. If use_social_proof is true, include a "ลูกค้าบอกว่า..." framing.
+  4. Format rules:
+     - caption: 50–100 Thai chars + hashtags
+     - post: 100–200 Thai chars
+     - script-outline: 5 scene bullets with visual and text overlay
+     - product-description-section: 80–150 chars for Shopee/Lazada embedding
+     - listicle: 3 softness-related tips/facts + SoClean tie-in
+  5. Never use superlatives. Stay with relative softness claims.
+
+  Return the JSON output now.
+
+output_format: json
+output_schema:
+  type: object
+  required: [content_pieces, hashtags, compliance_check]
+  properties:
+    content_pieces:
+      type: array
+      items:
+        type: object
+        required: [variant, format, channel, body]
+        properties:
+          variant: { type: integer }
+          format: { type: string }
+          channel: { type: string }
+          body: { type: string }
+          character_count: { type: integer }
+          image_direction: { type: string }
+    hashtags:
+      type: array
+      items: { type: string }
+    compliance_check:
+      type: object
+      required: [approved_claims_used, prohibited_terms_detected, is_safe]
+      properties:
+        approved_claims_used: { type: array, items: { type: string } }
+        prohibited_terms_detected: { type: array, items: { type: string } }
+        is_safe: { type: boolean }
+
+example_input:
+  target_channel: "TikTok"
+  target_persona: "มิ้น (Gen Y Household)"
+  format: "caption"
+  use_social_proof: true
+  content_count: 2
+
+example_output:
+  content_pieces:
+    - variant: 1
+      format: "caption"
+      channel: "TikTok"
+      body: "สัมผัสนุ่มตั้งแต่แผ่นแรก 🤍 ลูกค้าบอกว่านุ่ม — ลองเองก็รู้"
+      character_count: 57
+      image_direction: "Slow-motion close-up of tissue pulled from SoClean box; natural light"
+    - variant: 2
+      format: "caption"
+      channel: "TikTok"
+      body: "ทิชชู่นุ่มแค่ไหน? ลูกค้าบอกว่า 'นุ่มกว่าที่คาด' ✨ SoClean 2 ชั้น 180 แผ่น"
+      character_count: 71
+      image_direction: "Tissue held gently against cheek — warm tone, natural home setting"
+  hashtags:
+    - "#SoClean"
+    - "#ทิชชู่SoClean"
+    - "#BNPaper"
+    - "#ทิชชู่นุ่ม"
+    - "#ของใช้ในบ้าน"
+  compliance_check:
+    approved_claims_used:
+      - "สัมผัสนุ่ม"
+      - "ลูกค้าบอกว่านุ่ม"
+      - "เนียนนุ่ม"
+    prohibited_terms_detected: []
+    is_safe: true

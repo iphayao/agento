@@ -1,0 +1,192 @@
+name: "Review-Based Content"
+slug: "review-content-v1"
+version: "1.0"
+category: generation
+content_type: review-content
+channel: multi
+brand: soclean
+description: "Social proof content generated from real customer reviews — quote cards, captions, and response templates"
+purpose: >
+  Transforms real customer review data into publishable social proof content:
+  quote cards for TikTok/Facebook, attribution captions, and brand response templates.
+  Always requires real review input — never fabricates testimonials.
+  Output is always DRAFT — verify against source review before publishing.
+claim_safety_required: true
+tags: [review, social-proof, tiktok, facebook, shopee, customer-voice]
+
+variables:
+  - name: review_text
+    type: string
+    required: true
+    description: "The actual customer review text (verbatim from Shopee/Lazada/TikTok)"
+    example: "นุ่มมากกว่าที่คิด ฝุ่นน้อยจริงๆ วางบนโต๊ะดำแล้วไม่เห็นฝุ่นเลย จะสั่งซ้ำแน่นอนค่ะ"
+  - name: review_source
+    type: enum
+    required: true
+    description: "Platform where the review was posted"
+    options: [Shopee, Lazada, TikTok, Facebook, Google]
+    example: "Shopee"
+  - name: review_rating
+    type: integer
+    required: true
+    description: "Star rating given by the reviewer (1–5)"
+    example: 5
+  - name: target_channel
+    type: enum
+    required: true
+    description: "Channel where the generated content will be posted"
+    options: [TikTok, Facebook, Shopee, multi]
+    example: "Facebook"
+  - name: content_formats
+    type: array
+    required: true
+    description: "Which content formats to generate"
+    options: [quote-card-text, caption, brand-response, review-highlight-post]
+    example: ["quote-card-text", "caption", "brand-response"]
+
+system_prompt: |
+  You are a social media content specialist for SoClean by BN Paper, Thailand.
+  Your role is to transform real customer reviews into shareable social proof content.
+
+  ## CRITICAL RULE — AUTHENTICITY
+  You MUST use only the actual review text provided. Never embellish, exaggerate, or
+  fabricate details not present in the original review. If the review says "นุ่ม" do not
+  add "นุ่มมาก" unless that is in the review.
+
+  ## Brand Context
+  - Brand: SoClean | Company: BN Paper
+  - Product: Facial tissue, 2-ply, 180 sheets/box, Pack of 5
+  - Positioning: "สะอาด เนียนนุ่ม ฝุ่นน้อย"
+  - Brand response tone: Warm, grateful, genuine — not scripted or over-polished
+
+  ## Content Format Guidelines
+  - quote-card-text: The review quote as displayed on a card (clean, with star rating and source)
+  - caption: Social caption framing the review for TikTok/Facebook
+  - brand-response: A warm, brief brand reply (for Shopee/Lazada/TikTok comments)
+  - review-highlight-post: A full social post built around this review
+
+  ## CRITICAL — CLAIM SAFETY RULES
+  If the review itself contains prohibited terms (e.g., "ไร้ฝุ่น 100%"), do NOT repeat them
+  in brand-generated copy. Quote them only in the verbatim review block; add an editorial
+  note that the brand cannot endorse this claim.
+  PROHIBITED: ไร้ฝุ่น 100%, dust-free, antibacterial, สะอาดที่สุด, นุ่มที่สุด, etc.
+  SAFE: ฝุ่นน้อย, เนียนนุ่ม, ให้สัมผัสสะอาด, คุ้มค่า
+
+  ## Output Format
+  Respond ONLY with a valid JSON object. No prose, no markdown.
+
+user_prompt: |
+  Generate review-based social proof content for SoClean.
+
+  ## Input Variables
+  - Review text: {{review_text}}
+  - Review source: {{review_source}}
+  - Review rating: {{review_rating}} stars
+  - Target channel: {{target_channel}}
+  - Content formats requested: {{content_formats}}
+
+  ## Requirements
+  1. Use the review text verbatim in the quote — do not paraphrase or embellish.
+  2. Always attribute: "รีวิวจาก {{review_source}}"
+  3. Generate each requested content format.
+  4. If the review contains a prohibited claim, note it in compliance_check and do NOT
+     repeat that claim in brand-generated copy (only in the verbatim quote block).
+  5. brand-response: 30–60 Thai chars — warm, genuine, not templated-sounding.
+  6. caption: 50–100 Thai chars.
+  7. review-highlight-post: 100–200 Thai chars (for Facebook/TikTok).
+
+  Return the JSON output now.
+
+output_format: json
+output_schema:
+  type: object
+  required: [review_summary, content_pieces, compliance_check]
+  properties:
+    review_summary:
+      type: object
+      required: [source, rating, key_themes]
+      properties:
+        source: { type: string }
+        rating: { type: integer }
+        key_themes: { type: array, items: { type: string } }
+    content_pieces:
+      type: array
+      items:
+        type: object
+        required: [format, content]
+        properties:
+          format:
+            type: string
+            enum: [quote-card-text, caption, brand-response, review-highlight-post]
+          content: { type: string }
+          character_count: { type: integer }
+          usage_note: { type: string }
+    hashtags:
+      type: array
+      items: { type: string }
+    compliance_check:
+      type: object
+      required: [review_contains_prohibited_terms, approved_claims_used, prohibited_terms_detected, is_safe, notes]
+      properties:
+        review_contains_prohibited_terms: { type: boolean }
+        approved_claims_used: { type: array, items: { type: string } }
+        prohibited_terms_detected: { type: array, items: { type: string } }
+        is_safe: { type: boolean }
+        notes: { type: string }
+
+example_input:
+  review_text: "นุ่มมากกว่าที่คิด ฝุ่นน้อยจริงๆ วางบนโต๊ะดำแล้วไม่เห็นฝุ่นเลย จะสั่งซ้ำแน่นอนค่ะ"
+  review_source: "Shopee"
+  review_rating: 5
+  target_channel: "Facebook"
+  content_formats: ["quote-card-text", "caption", "brand-response", "review-highlight-post"]
+
+example_output:
+  review_summary:
+    source: "Shopee"
+    rating: 5
+    key_themes: ["softness", "low-dust", "repeat-purchase"]
+  content_pieces:
+    - format: "quote-card-text"
+      content: |
+        ⭐⭐⭐⭐⭐ รีวิวจาก Shopee
+
+        "นุ่มมากกว่าที่คิด ฝุ่นน้อยจริงๆ
+        วางบนโต๊ะดำแล้วไม่เห็นฝุ่นเลย
+        จะสั่งซ้ำแน่นอนค่ะ"
+
+        — ลูกค้า SoClean บน Shopee
+      character_count: 112
+      usage_note: "Use as a quote card image graphic for Facebook/TikTok"
+    - format: "caption"
+      content: "ลูกค้าพูดเองเลยค่ะ ✨ SoClean เนียนนุ่ม ฝุ่นน้อย สั่งซ้ำได้ทุกเดือน"
+      character_count: 64
+      usage_note: "TikTok or Facebook caption — pair with the quote card"
+    - format: "brand-response"
+      content: "ขอบคุณมากนะคะ ดีใจที่ถูกใจ รอรับสินค้ารอบหน้าด้วยนะคะ 🙏"
+      character_count: 55
+      usage_note: "Reply to the original Shopee review"
+    - format: "review-highlight-post"
+      content: |
+        ลูกค้าบอกว่า… ✨
+
+        "ฝุ่นน้อยจริงๆ วางบนโต๊ะดำแล้วไม่เห็นฝุ่นเลย"
+
+        SoClean เนียนนุ่ม ฝุ่นน้อย เหมาะสำหรับทุกคนในบ้านและออฟฟิศ
+        สั่งได้เลยที่ Shopee / Lazada 🛒
+      character_count: 178
+      usage_note: "Full Facebook post with the quote card as the image"
+  hashtags:
+    - "#SoClean"
+    - "#ทิชชู่SoClean"
+    - "#รีวิวทิชชู่"
+    - "#ฝุ่นน้อย"
+    - "#ทิชชู่นุ่ม"
+  compliance_check:
+    review_contains_prohibited_terms: false
+    approved_claims_used:
+      - "เนียนนุ่ม"
+      - "ฝุ่นน้อย"
+    prohibited_terms_detected: []
+    is_safe: true
+    notes: "Review text is claim-safe. Key themes (softness, low-dust, repeat purchase) are all within approved claim categories."

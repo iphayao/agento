@@ -1,0 +1,109 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://agento.internal/schema/prompt-template/v1",
+  "title": "AgentoPromptTemplate",
+  "description": "JSON Schema for Agento prompt template YAML files",
+  "type": "object",
+  "required": ["name", "slug", "version", "category", "content_type", "channel", "brand", "description", "variables", "system_prompt", "user_prompt", "output_schema"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Human-readable display name"
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+-v[0-9]+$",
+      "description": "Machine-readable identifier, e.g. tiktok-video-script-v1"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$",
+      "description": "Semantic version, e.g. 1.0"
+    },
+    "category": {
+      "type": "string",
+      "enum": ["generation", "utility", "compliance"],
+      "description": "Template category"
+    },
+    "content_type": {
+      "type": "string",
+      "description": "Specific content type produced by this template"
+    },
+    "channel": {
+      "type": "string",
+      "enum": ["tiktok", "shopee", "lazada", "facebook", "reseller", "multi", "any"],
+      "description": "Target publishing channel"
+    },
+    "brand": {
+      "type": "string",
+      "description": "Brand this template is designed for"
+    },
+    "description": {
+      "type": "string",
+      "description": "One-line description of what this template produces"
+    },
+    "purpose": {
+      "type": "string",
+      "description": "Detailed purpose and when to use this template"
+    },
+    "claim_safety_required": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether output must include a compliance_check object"
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Searchable tags for this template"
+    },
+    "variables": {
+      "type": "array",
+      "description": "Input variables required or accepted by this template",
+      "items": {
+        "type": "object",
+        "required": ["name", "type", "required", "description"],
+        "properties": {
+          "name": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["string", "integer", "boolean", "array", "enum"]
+          },
+          "required": { "type": "boolean" },
+          "description": { "type": "string" },
+          "example": {},
+          "default": {},
+          "options": {
+            "type": "array",
+            "description": "Allowed values for enum-type variables"
+          }
+        }
+      }
+    },
+    "system_prompt": {
+      "type": "string",
+      "description": "System prompt sent to the LLM — sets role, brand context, claim safety rules"
+    },
+    "user_prompt": {
+      "type": "string",
+      "description": "User prompt template with {{variable_name}} placeholders"
+    },
+    "output_format": {
+      "type": "string",
+      "enum": ["json"],
+      "default": "json"
+    },
+    "output_schema": {
+      "type": "object",
+      "description": "JSON Schema definition for the expected LLM output"
+    },
+    "example_input": {
+      "type": "object",
+      "description": "Example values for all variables"
+    },
+    "example_output": {
+      "type": "object",
+      "description": "Example JSON output for this template using SoClean content"
+    }
+  }
+}

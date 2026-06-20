@@ -1,0 +1,183 @@
+name: "Shopee Product Description"
+slug: "shopee-product-description-v1"
+version: "1.0"
+category: generation
+content_type: product-description
+channel: shopee
+brand: soclean
+description: "Full Shopee product listing — title + description (500–1,000 chars) for SoClean facial tissue"
+purpose: >
+  Generates a complete Shopee product listing including an SEO-optimised title (≤100 chars)
+  and a full Thai product description following Shopee's recommended structure.
+  Primary audience: มิ้น (Gen Y household) and คุณแม่บ้าน (family manager).
+  Output is always DRAFT — requires human editorial review before publishing.
+claim_safety_required: true
+tags: [shopee, listing, product-description, ecommerce, household]
+
+variables:
+  - name: focus_pillar
+    type: enum
+    required: true
+    description: "Primary product benefit to lead with in this listing"
+    options: [เนียนนุ่ม, ฝุ่นน้อย, คุ้มค่า, เหมาะทุกที่]
+    example: "ฝุ่นน้อย"
+  - name: target_persona
+    type: enum
+    required: true
+    description: "Persona to write for"
+    options: ["มิ้น (Gen Y Household)", "คุณแม่บ้าน (Family)", "พี่โอ๋ (Office)"]
+    example: "มิ้น (Gen Y Household)"
+  - name: review_highlights
+    type: array
+    required: false
+    description: "2–3 real customer review snippets to embed as social proof"
+    example: ["นุ่มมากกว่าที่คิด", "ฝุ่นน้อยจริงๆ วางบนโต๊ะดำแล้วไม่เห็นฝุ่น", "สั่งซ้ำทุกเดือนเลยค่ะ"]
+  - name: promotion_note
+    type: string
+    required: false
+    description: "Optional promotion to mention, e.g. 'ซื้อ 2 แพ็ค ลดพิเศษ'"
+    example: ""
+  - name: include_carton_note
+    type: boolean
+    required: false
+    default: false
+    description: "Whether to include a note about carton pricing for resellers"
+    example: false
+
+system_prompt: |
+  You are a Shopee product listing specialist for SoClean, a facial tissue brand by BN Paper, Thailand.
+
+  ## Brand Context
+  - Brand: SoClean | Company: BN Paper
+  - Product: Facial tissue, 2-ply, 180 sheets/box, Pack of 5 boxes (900 sheets/pack), Carton of 50 packs
+  - Positioning: "สะอาด เนียนนุ่ม ฝุ่นน้อย" — honest everyday value, not premium or medical
+  - Language register: ภาษาไทยกลาง — formal-practical Thai; warm but informative
+
+  ## Shopee Listing Structure
+  Title: [Brand] + product type + key specs + 1–2 key benefits | max 100 characters | no emoji
+  Description sections (in order):
+    1. Hook headline (Thai, ≤20 words) — lead with the focus pillar
+    2. Product specs table (2-ply, 180 sheets, pack of 5, 900 sheets/pack)
+    3. Key benefits (3–4 bullets, claim-safe Thai)
+    4. Use cases (home / office / family)
+    5. Shipping note
+    6. Review highlights (if provided — attribute to Shopee)
+  Total description: 500–1,000 Thai characters.
+  Emoji: acceptable in description (1–2 per section); NOT in title.
+
+  ## CRITICAL — CLAIM SAFETY RULES
+  NEVER use: ไร้ฝุ่น 100%, dust-free, antibacterial, ฆ่าเชื้อโรค, medically safe,
+  hypoallergenic, dermatologist, สะอาดที่สุด, นุ่มที่สุด, ปลอดภัยที่สุด, ดีที่สุด, อันดับ 1
+  USE INSTEAD: ฝุ่นน้อย, เนียนนุ่ม, ให้สัมผัสสะอาด, เหมาะกับการใช้งานทุกวัน, คุ้มค่า
+
+  ## Output Format
+  Respond ONLY with a valid JSON object. No prose, no markdown.
+
+user_prompt: |
+  Generate a Shopee product listing for SoClean facial tissue.
+
+  ## Input Variables
+  - Focus pillar: {{focus_pillar}}
+  - Target persona: {{target_persona}}
+  - Review highlights: {{review_highlights}}
+  - Promotion note: {{promotion_note}}
+  - Include carton note: {{include_carton_note}}
+
+  ## Requirements
+  1. Title: max 100 chars, no emoji, include key search terms (ทิชชู่, ทิชชู่หน้า, กระดาษทิชชู่).
+  2. Description: 500–1,000 Thai chars following the 6-section structure.
+  3. Lead the description with the {{focus_pillar}} pillar.
+  4. Write for {{target_persona}} — match their key concerns and language.
+  5. If review_highlights provided, embed 2–3 attributed quotes.
+  6. If include_carton_note is true, add a one-line reseller note at the end.
+  7. Verify every claim against claim safety rules.
+
+  Return the JSON output now.
+
+output_format: json
+output_schema:
+  type: object
+  required: [title, title_character_count, description, description_character_count, key_benefits, compliance_check]
+  properties:
+    title:
+      type: string
+      description: "Shopee product title — max 100 chars"
+    title_character_count:
+      type: integer
+    description:
+      type: string
+      description: "Full Thai product description — 500–1,000 chars"
+    description_character_count:
+      type: integer
+    key_benefits:
+      type: array
+      items: { type: string }
+      description: "3–4 approved benefit claims used in the listing"
+    review_snippets_used:
+      type: array
+      items: { type: string }
+      description: "Review snippets embedded in the description"
+    compliance_check:
+      type: object
+      required: [approved_claims_used, prohibited_terms_detected, is_safe]
+      properties:
+        approved_claims_used: { type: array, items: { type: string } }
+        prohibited_terms_detected: { type: array, items: { type: string } }
+        is_safe: { type: boolean }
+
+example_input:
+  focus_pillar: "ฝุ่นน้อย"
+  target_persona: "มิ้น (Gen Y Household)"
+  review_highlights:
+    - "นุ่มมากกว่าที่คิด"
+    - "ฝุ่นน้อยจริงๆ วางบนโต๊ะดำแล้วไม่เห็นฝุ่น"
+    - "สั่งซ้ำทุกเดือนเลยค่ะ"
+  promotion_note: ""
+  include_carton_note: false
+
+example_output:
+  title: "SoClean ทิชชู่หน้า 2ชั้น 180แผ่น แพ็ค5กล่อง ฝุ่นน้อย เนียนนุ่ม เหมาะออฟฟิศและบ้าน"
+  title_character_count: 82
+  description: |
+    ✨ ฝุ่นน้อย สัมผัสนุ่ม ใช้ดีจนต้องสั่งซ้ำ
+
+    📦 รายละเอียดสินค้า
+    • ทิชชู่ 2 ชั้น | 180 แผ่น/กล่อง
+    • 1 แพ็ค = 5 กล่อง = 900 แผ่น
+    • เหมาะสำหรับใบหน้า มือ และการใช้งานทั่วไป
+
+    ✅ จุดเด่น
+    • ฝุ่นน้อย ไม่ตกบนพื้นผิวโต๊ะและของใช้
+    • เนียนนุ่ม สัมผัสดีตั้งแต่แผ่นแรก
+    • คุ้มค่า 900 แผ่นต่อแพ็ค ใช้ได้ทั้งเดือน
+    • เหมาะทั้งบ้าน ออฟฟิศ และห้องนอน
+
+    🏠 เหมาะสำหรับ
+    บ้าน | ออฟฟิศ | ห้องครัว | ห้องนอน | โต๊ะทำงาน
+
+    🚚 จัดส่งผ่าน Shopee Express รวดเร็ว
+
+    ⭐⭐⭐⭐⭐ รีวิวจากลูกค้าจริง
+    "นุ่มมากกว่าที่คิด"
+    "ฝุ่นน้อยจริงๆ วางบนโต๊ะดำแล้วไม่เห็นฝุ่น"
+    "สั่งซ้ำทุกเดือนเลยค่ะ"
+    — รีวิวจาก Shopee
+  description_character_count: 627
+  key_benefits:
+    - "ฝุ่นน้อย"
+    - "เนียนนุ่ม"
+    - "คุ้มค่า 900 แผ่นต่อแพ็ค"
+    - "เหมาะทั้งบ้าน ออฟฟิศ และห้องนอน"
+  review_snippets_used:
+    - "นุ่มมากกว่าที่คิด"
+    - "ฝุ่นน้อยจริงๆ วางบนโต๊ะดำแล้วไม่เห็นฝุ่น"
+    - "สั่งซ้ำทุกเดือนเลยค่ะ"
+  compliance_check:
+    approved_claims_used:
+      - "ฝุ่นน้อย"
+      - "เนียนนุ่ม"
+      - "สัมผัสดี"
+      - "คุ้มค่า"
+      - "เหมาะทั้งบ้าน ออฟฟิศ"
+    prohibited_terms_detected: []
+    is_safe: true

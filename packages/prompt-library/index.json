@@ -1,0 +1,247 @@
+{
+  "version": "1.0",
+  "brand": "soclean",
+  "last_updated": "2026-06-20",
+  "template_count": 20,
+  "schema": "./schema/template-schema.json",
+  "shared": {
+    "claim_safety": "./shared/claim-safety.yaml",
+    "brand_context": "./shared/brand-context.yaml"
+  },
+  "templates": [
+    {
+      "id": 1,
+      "slug": "tiktok-video-script-v1",
+      "name": "TikTok Video Script",
+      "file": "./templates/01-tiktok-video-script-v1.yaml",
+      "category": "generation",
+      "content_type": "video-script",
+      "channel": "tiktok",
+      "claim_safety_required": true,
+      "tags": ["tiktok", "video", "script", "organic", "social"]
+    },
+    {
+      "id": 2,
+      "slug": "tiktok-caption-v1",
+      "name": "TikTok Caption",
+      "file": "./templates/02-tiktok-caption-v1.yaml",
+      "category": "generation",
+      "content_type": "caption",
+      "channel": "tiktok",
+      "claim_safety_required": true,
+      "tags": ["tiktok", "caption", "hashtag", "social", "short-form"]
+    },
+    {
+      "id": 3,
+      "slug": "shopee-product-description-v1",
+      "name": "Shopee Product Description",
+      "file": "./templates/03-shopee-product-description-v1.yaml",
+      "category": "generation",
+      "content_type": "product-description",
+      "channel": "shopee",
+      "claim_safety_required": true,
+      "tags": ["shopee", "listing", "product-description", "ecommerce", "household"]
+    },
+    {
+      "id": 4,
+      "slug": "lazada-product-description-v1",
+      "name": "Lazada Product Description",
+      "file": "./templates/04-lazada-product-description-v1.yaml",
+      "category": "generation",
+      "content_type": "product-description",
+      "channel": "lazada",
+      "claim_safety_required": true,
+      "tags": ["lazada", "listing", "product-description", "ecommerce", "office", "b2b"]
+    },
+    {
+      "id": 5,
+      "slug": "facebook-post-v1",
+      "name": "Facebook Post",
+      "file": "./templates/05-facebook-post-v1.yaml",
+      "category": "generation",
+      "content_type": "social-post",
+      "channel": "facebook",
+      "claim_safety_required": true,
+      "tags": ["facebook", "social", "post", "organic", "community", "lifestyle"]
+    },
+    {
+      "id": 6,
+      "slug": "reseller-sales-post-v1",
+      "name": "Reseller Sales Post",
+      "file": "./templates/06-reseller-sales-post-v1.yaml",
+      "category": "generation",
+      "content_type": "reseller-post",
+      "channel": "reseller",
+      "claim_safety_required": true,
+      "tags": ["reseller", "sales", "facebook", "line", "b2c", "shop-owner"]
+    },
+    {
+      "id": 7,
+      "slug": "review-content-v1",
+      "name": "Review-Based Content",
+      "file": "./templates/07-review-content-v1.yaml",
+      "category": "generation",
+      "content_type": "review-content",
+      "channel": "multi",
+      "claim_safety_required": true,
+      "tags": ["review", "social-proof", "tiktok", "facebook", "shopee", "customer-voice"]
+    },
+    {
+      "id": 8,
+      "slug": "promotion-campaign-v1",
+      "name": "Promotion Campaign Content",
+      "file": "./templates/08-promotion-campaign-v1.yaml",
+      "category": "generation",
+      "content_type": "campaign",
+      "channel": "multi",
+      "claim_safety_required": true,
+      "tags": ["campaign", "promotion", "multi-channel", "sale", "flash-sale", "seasonal"]
+    },
+    {
+      "id": 9,
+      "slug": "educational-content-v1",
+      "name": "Educational Content",
+      "file": "./templates/09-educational-content-v1.yaml",
+      "category": "generation",
+      "content_type": "educational",
+      "channel": "multi",
+      "claim_safety_required": true,
+      "tags": ["educational", "informational", "tips", "organic", "trust-building"]
+    },
+    {
+      "id": 10,
+      "slug": "comparison-content-v1",
+      "name": "Comparison Content",
+      "file": "./templates/10-comparison-content-v1.yaml",
+      "category": "generation",
+      "content_type": "comparison",
+      "channel": "multi",
+      "claim_safety_required": true,
+      "tags": ["comparison", "differentiation", "social", "tiktok", "facebook", "shopee"]
+    },
+    {
+      "id": 11,
+      "slug": "softness-focused-v1",
+      "name": "Softness-Focused Content",
+      "file": "./templates/11-softness-focused-v1.yaml",
+      "category": "generation",
+      "content_type": "pillar-content",
+      "channel": "multi",
+      "claim_safety_required": true,
+      "tags": ["softness", "pillar", "เนียนนุ่ม", "tiktok", "facebook", "shopee", "sensory"]
+    },
+    {
+      "id": 12,
+      "slug": "cleanliness-focused-v1",
+      "name": "Cleanliness-Focused Content",
+      "file": "./templates/12-cleanliness-focused-v1.yaml",
+      "category": "generation",
+      "content_type": "pillar-content",
+      "channel": "multi",
+      "claim_safety_required": true,
+      "tags": ["cleanliness", "pillar", "สะอาด", "sensory", "lifestyle", "tiktok", "facebook"]
+    },
+    {
+      "id": 13,
+      "slug": "low-dust-focused-v1",
+      "name": "Low-Dust-Focused Content",
+      "file": "./templates/13-low-dust-focused-v1.yaml",
+      "category": "generation",
+      "content_type": "pillar-content",
+      "channel": "multi",
+      "claim_safety_required": true,
+      "tags": ["low-dust", "pillar", "ฝุ่นน้อย", "office", "demonstration", "tiktok"]
+    },
+    {
+      "id": 14,
+      "slug": "value-pack-focused-v1",
+      "name": "Value-Pack-Focused Content",
+      "file": "./templates/14-value-pack-focused-v1.yaml",
+      "category": "generation",
+      "content_type": "pillar-content",
+      "channel": "multi",
+      "claim_safety_required": true,
+      "tags": ["value", "pillar", "คุ้มค่า", "math", "carton", "household", "office", "reseller"]
+    },
+    {
+      "id": 15,
+      "slug": "b2b-reseller-content-v1",
+      "name": "B2B Reseller Content",
+      "file": "./templates/15-b2b-reseller-content-v1.yaml",
+      "category": "generation",
+      "content_type": "b2b-content",
+      "channel": "reseller",
+      "claim_safety_required": true,
+      "tags": ["b2b", "reseller", "wholesale", "carton", "line", "facebook", "shop-owner"]
+    },
+    {
+      "id": 16,
+      "slug": "claim-compliance-review-v1",
+      "name": "Claim Compliance Review",
+      "file": "./templates/16-claim-compliance-review-v1.yaml",
+      "category": "compliance",
+      "content_type": "compliance-review",
+      "channel": "any",
+      "claim_safety_required": true,
+      "tags": ["compliance", "audit", "claim-check", "prohibited-terms", "review", "gate"]
+    },
+    {
+      "id": 17,
+      "slug": "content-editing-v1",
+      "name": "Content Editing",
+      "file": "./templates/17-content-editing-v1.yaml",
+      "category": "utility",
+      "content_type": "edit",
+      "channel": "any",
+      "claim_safety_required": true,
+      "tags": ["editing", "rewrite", "improve", "fix", "tone", "claim-safety", "utility"]
+    },
+    {
+      "id": 18,
+      "slug": "hook-generation-v1",
+      "name": "Hook Generation",
+      "file": "./templates/18-hook-generation-v1.yaml",
+      "category": "utility",
+      "content_type": "hooks",
+      "channel": "multi",
+      "claim_safety_required": true,
+      "tags": ["hook", "opening", "attention", "tiktok", "facebook", "copywriting", "utility"]
+    },
+    {
+      "id": 19,
+      "slug": "cta-generation-v1",
+      "name": "CTA Generation",
+      "file": "./templates/19-cta-generation-v1.yaml",
+      "category": "utility",
+      "content_type": "cta",
+      "channel": "multi",
+      "claim_safety_required": false,
+      "tags": ["cta", "call-to-action", "conversion", "utility", "tiktok", "facebook", "shopee"]
+    },
+    {
+      "id": 20,
+      "slug": "hashtag-generation-v1",
+      "name": "Hashtag Generation",
+      "file": "./templates/20-hashtag-generation-v1.yaml",
+      "category": "utility",
+      "content_type": "hashtags",
+      "channel": "multi",
+      "claim_safety_required": true,
+      "tags": ["hashtag", "social", "tiktok", "facebook", "instagram", "discovery", "utility"]
+    }
+  ],
+  "category_summary": {
+    "generation": 15,
+    "utility": 4,
+    "compliance": 1
+  },
+  "channel_summary": {
+    "tiktok": 2,
+    "shopee": 1,
+    "lazada": 1,
+    "facebook": 1,
+    "reseller": 2,
+    "multi": 10,
+    "any": 3
+  }
+}

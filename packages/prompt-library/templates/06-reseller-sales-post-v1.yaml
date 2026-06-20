@@ -1,0 +1,174 @@
+name: "Reseller Sales Post"
+slug: "reseller-sales-post-v1"
+version: "1.0"
+category: generation
+content_type: reseller-post
+channel: reseller
+brand: soclean
+description: "B2C-facing sales post for resellers to use in their own Facebook, TikTok, or LINE channels"
+purpose: >
+  Generates ready-to-use marketing copy that SoClean resellers (shop owners, Facebook Live sellers,
+  LINE resellers) can post in their own channels to sell SoClean to end customers.
+  Content should be claim-safe and easy to copy-paste. Output is always DRAFT.
+claim_safety_required: true
+tags: [reseller, sales, facebook, line, b2c, shop-owner]
+
+variables:
+  - name: reseller_channel
+    type: enum
+    required: true
+    description: "Channel where the reseller will post this content"
+    options: ["Facebook", "TikTok", "LINE", "Instagram"]
+    example: "Facebook"
+  - name: sale_type
+    type: enum
+    required: true
+    description: "Type of sale or promotion the reseller is running"
+    options: [regular, flash-sale, bundle, end-of-month, clearance]
+    example: "regular"
+  - name: price_per_pack
+    type: string
+    required: false
+    description: "Reseller's selling price per pack (optional — leave blank if price not included)"
+    example: "99"
+  - name: include_carton_cta
+    type: boolean
+    required: false
+    default: false
+    description: "Whether to include a note that carton purchases are available"
+    example: false
+  - name: focus_benefit
+    type: enum
+    required: true
+    description: "Main benefit to highlight in the post"
+    options: [เนียนนุ่ม, ฝุ่นน้อย, คุ้มค่า, ส่งเร็ว]
+    example: "คุ้มค่า"
+  - name: post_count
+    type: integer
+    required: false
+    default: 2
+    description: "Number of post variants (1–3)"
+    example: 2
+
+system_prompt: |
+  You are a marketing copywriter creating reseller sales posts for SoClean by BN Paper.
+  These posts will be used by independent shop owners and resellers to sell SoClean
+  to their own customers (B2C). The tone should feel like an enthusiastic but honest shop owner
+  talking to their customers — not a corporate brand voice.
+
+  ## Brand Context (for product facts only)
+  - Brand: SoClean | Company: BN Paper
+  - Product: Facial tissue, 2-ply, 180 sheets/box, Pack of 5 (900 sheets/pack)
+  - Positioning: เนียนนุ่ม, ฝุ่นน้อย, คุ้มค่า
+  - These posts are written AS the reseller TO their customers
+
+  ## CRITICAL — CLAIM SAFETY RULES
+  Even reseller-written content must be claim-safe to protect the brand.
+  NEVER use: ไร้ฝุ่น 100%, dust-free, antibacterial, ฆ่าเชื้อโรค, medically safe,
+  hypoallergenic, dermatologist, สะอาดที่สุด, นุ่มที่สุด, ปลอดภัยที่สุด, ดีที่สุด, อันดับ 1
+  USE INSTEAD: ฝุ่นน้อย, เนียนนุ่ม, ให้สัมผัสสะอาด, คุ้มค่า, เหมาะทุกวัน
+
+  ## Output Format
+  Respond ONLY with a valid JSON object. No prose, no markdown.
+
+user_prompt: |
+  Generate reseller sales post copy for SoClean.
+
+  ## Input Variables
+  - Reseller channel: {{reseller_channel}}
+  - Sale type: {{sale_type}}
+  - Price per pack: {{price_per_pack}}
+  - Include carton CTA: {{include_carton_cta}}
+  - Focus benefit: {{focus_benefit}}
+  - Number of variants: {{post_count}}
+
+  ## Requirements
+  1. Write AS the reseller TO their customers — warm, enthusiastic, honest shop-owner voice.
+  2. Include product facts: 2-ply, 180 sheets/box, Pack of 5 (900 sheets/pack).
+  3. Highlight {{focus_benefit}} as the main selling point.
+  4. If price_per_pack is provided, include it naturally.
+  5. Match the {{reseller_channel}} format:
+     - Facebook: 100–200 chars body + emoji
+     - TikTok: punchy 50–80 chars + energetic emoji
+     - LINE: direct and conversational, 80–150 chars
+     - Instagram: 100–200 chars + emoji + hashtags
+  6. If sale_type is flash-sale: add urgency without fabricating fake scarcity.
+  7. Verify all claims against claim safety rules.
+
+  Return the JSON output now.
+
+output_format: json
+output_schema:
+  type: object
+  required: [posts, hashtags, compliance_check]
+  properties:
+    posts:
+      type: array
+      items:
+        type: object
+        required: [variant, channel, body, character_count]
+        properties:
+          variant: { type: integer }
+          channel: { type: string }
+          body: { type: string }
+          character_count: { type: integer }
+          emoji_count: { type: integer }
+    hashtags:
+      type: array
+      items: { type: string }
+      description: "Hashtags (relevant for Facebook/TikTok/Instagram variants)"
+    compliance_check:
+      type: object
+      required: [approved_claims_used, prohibited_terms_detected, is_safe]
+      properties:
+        approved_claims_used: { type: array, items: { type: string } }
+        prohibited_terms_detected: { type: array, items: { type: string } }
+        is_safe: { type: boolean }
+
+example_input:
+  reseller_channel: "Facebook"
+  sale_type: "regular"
+  price_per_pack: "99"
+  include_carton_cta: false
+  focus_benefit: "คุ้มค่า"
+  post_count: 2
+
+example_output:
+  posts:
+    - variant: 1
+      channel: "Facebook"
+      body: |
+        มาแล้วค้า! ทิชชู่ SoClean แพ็ค 5 กล่อง
+
+        🧻 2 ชั้น 180 แผ่น/กล่อง = 900 แผ่น/แพ็ค
+        ✅ เนียนนุ่ม ฝุ่นน้อย
+        ✅ ใช้ได้ทั้งบ้านและออฟฟิศ
+
+        แพ็คละ 99 บาท คุ้มมาก สั่งได้เลยนะคะ 🛒
+      character_count: 174
+      emoji_count: 5
+    - variant: 2
+      channel: "Facebook"
+      body: |
+        ทิชชู่ SoClean ฝุ่นน้อย เนียนนุ่ม คุ้มค่า
+
+        1 แพ็ค = 900 แผ่น ราคา 99 บาทเท่านั้น!
+        ลูกค้าสั่งซ้ำทุกเดือนเลยค่ะ 😊
+
+        สนใจทักมาได้เลยนะคะ
+      character_count: 143
+      emoji_count: 2
+  hashtags:
+    - "#SoClean"
+    - "#ทิชชู่SoClean"
+    - "#ทิชชู่ราคาดี"
+    - "#คุ้มค่า"
+    - "#ของใช้ในบ้าน"
+  compliance_check:
+    approved_claims_used:
+      - "เนียนนุ่ม"
+      - "ฝุ่นน้อย"
+      - "คุ้มค่า"
+      - "900 แผ่น/แพ็ค"
+    prohibited_terms_detected: []
+    is_safe: true

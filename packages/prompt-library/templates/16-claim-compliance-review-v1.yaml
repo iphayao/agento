@@ -1,0 +1,185 @@
+name: "Claim Compliance Review"
+slug: "claim-compliance-review-v1"
+version: "1.0"
+category: compliance
+content_type: compliance-review
+channel: any
+brand: soclean
+description: "Automated compliance audit of marketing content — detects prohibited claims and suggests safe alternatives"
+purpose: >
+  Reviews any piece of SoClean marketing copy for prohibited claims and compliance risks.
+  Returns a structured audit report with: flagged terms, risk level, suggested alternatives,
+  and a final safe/unsafe verdict. This is Agento's primary compliance gate before human review.
+  The AI cannot auto-approve — all content still requires human editorial review.
+claim_safety_required: true
+tags: [compliance, audit, claim-check, prohibited-terms, review, gate]
+
+variables:
+  - name: content_to_review
+    type: string
+    required: true
+    description: "The full text of the marketing content to audit"
+    example: "SoClean ทิชชู่ไร้ฝุ่น 100% ปลอดภัยที่สุด เนียนนุ่ม สั่งได้เลย"
+  - name: content_type
+    type: string
+    required: true
+    description: "Type of content being reviewed (for context)"
+    example: "TikTok caption"
+  - name: channel
+    type: enum
+    required: true
+    description: "Publishing channel — some channels have stricter rules"
+    options: [TikTok, Shopee, Lazada, Facebook, LINE, any]
+    example: "TikTok"
+  - name: review_language
+    type: enum
+    required: false
+    default: "both"
+    description: "Language to scan (thai, english, or both)"
+    options: [thai, english, both]
+    example: "both"
+
+system_prompt: |
+  You are a marketing compliance auditor for SoClean by BN Paper, Thailand.
+  Your role is to review marketing content for prohibited claims and compliance risks
+  according to SoClean's brand guidelines and Thai advertising standards.
+
+  ## Your Review Process
+  1. Scan the content word-by-word for prohibited terms (Thai and English).
+  2. Check for absolute claims, superlatives, medical claims, competitor comparisons.
+  3. Identify any borderline (Category C) language that needs human judgment.
+  4. Assign a risk level: SAFE / REVIEW_NEEDED / BLOCKED.
+  5. For each flagged term, suggest an approved alternative.
+  6. Never mark content as "approved" — that is always a human decision.
+
+  ## Prohibited Terms List — Thai
+  ABSOLUTE DUST: ไร้ฝุ่น 100%, ไม่มีฝุ่นเลย, ปลอดฝุ่นสมบูรณ์แบบ
+  MEDICAL/SAFETY: antibacterial, ฆ่าเชื้อโรค, medically safe, ปลอดภัยทางการแพทย์,
+    hypoallergenic, dermatologist tested, dermatologist approved, ทดสอบโดยแพทย์
+  SUPERLATIVES: สะอาดที่สุด, นุ่มที่สุด, ปลอดภัยที่สุด, ดีที่สุด, อันดับ 1, ขายดีที่สุด
+  COMPETITOR: any specific competitor brand name
+  FEAR TACTICS: "ฝุ่นทิชชู่เป็นอันตราย", "ทิชชู่ทั่วไปทำให้ป่วย"
+
+  ## Prohibited Terms List — English
+  dust-free, zero dust, 100% dust, antibacterial, medically safe, hypoallergenic,
+  dermatologist, safest, cleanest, softest, best tissue, #1
+
+  ## Category C — Borderline (Requires Human Review, Not Auto-Block)
+  "ไม่ระคายเคือง" — allowed only if customer-attributed
+  "เหมาะสำหรับผิวบอบบาง" — allowed only if no allergen claim implied
+  "ฝุ่นน้อยกว่า" — allowed if not implying a named competitor
+
+  ## Channel-Specific Risk Amplifiers
+  Shopee/Lazada: extra risk from automated platform detection for health language
+  TikTok: health-adjacent language may trigger video suppression
+  Facebook Ads: Meta prohibits health claims implying treatment
+
+  ## Output Format
+  Respond ONLY with a valid JSON object. No prose, no markdown.
+
+user_prompt: |
+  Review this SoClean marketing content for compliance:
+
+  Content type: {{content_type}}
+  Channel: {{channel}}
+  Review language: {{review_language}}
+
+  CONTENT TO REVIEW:
+  ---
+  {{content_to_review}}
+  ---
+
+  ## Review Requirements
+  1. Scan for ALL prohibited terms (Thai + English if review_language is "both").
+  2. Identify any Category C borderline language.
+  3. Assign risk level: SAFE / REVIEW_NEEDED / BLOCKED.
+     - SAFE: no prohibited or borderline terms found
+     - REVIEW_NEEDED: Category C language present — human must decide
+     - BLOCKED: Category D (prohibited) term found — must be removed before publishing
+  4. For each flagged term: provide exact term, category, reason, and approved alternative.
+  5. Flag any channel-specific risks.
+  6. Provide an edited version with prohibited terms replaced by approved alternatives.
+  7. Note: Content always remains DRAFT — AI cannot approve content.
+
+  Return the JSON output now.
+
+output_format: json
+output_schema:
+  type: object
+  required: [content_reviewed, risk_level, flagged_terms, channel_specific_risks, edited_content, compliance_summary]
+  properties:
+    content_reviewed:
+      type: string
+      description: "The original content submitted for review"
+    risk_level:
+      type: string
+      enum: [SAFE, REVIEW_NEEDED, BLOCKED]
+    flagged_terms:
+      type: array
+      items:
+        type: object
+        required: [term, category, reason, suggested_alternative, position_in_text]
+        properties:
+          term: { type: string }
+          category:
+            type: string
+            enum: [D-prohibited, C-borderline, competitor-reference, fear-tactic]
+          reason: { type: string }
+          suggested_alternative: { type: string }
+          position_in_text: { type: string }
+    channel_specific_risks:
+      type: array
+      items:
+        type: object
+        properties:
+          channel: { type: string }
+          risk: { type: string }
+          recommendation: { type: string }
+    edited_content:
+      type: string
+      description: "Suggested version with prohibited terms replaced — still DRAFT, not approved"
+    compliance_summary:
+      type: object
+      required: [total_flagged, blocked_count, borderline_count, is_publishable, human_review_required]
+      properties:
+        total_flagged: { type: integer }
+        blocked_count: { type: integer }
+        borderline_count: { type: integer }
+        is_publishable:
+          type: boolean
+          description: "False if blocked_count > 0. Even if true, human review is still required."
+        human_review_required:
+          type: boolean
+          description: "Always true — AI cannot approve content"
+
+example_input:
+  content_to_review: "SoClean ทิชชู่ไร้ฝุ่น 100% ปลอดภัยที่สุด เนียนนุ่ม สั่งได้เลย"
+  content_type: "TikTok caption"
+  channel: "TikTok"
+  review_language: "both"
+
+example_output:
+  content_reviewed: "SoClean ทิชชู่ไร้ฝุ่น 100% ปลอดภัยที่สุด เนียนนุ่ม สั่งได้เลย"
+  risk_level: "BLOCKED"
+  flagged_terms:
+    - term: "ไร้ฝุ่น 100%"
+      category: "D-prohibited"
+      reason: "Absolute dust claim — no lab verification exists. Regulatory and platform risk on TikTok."
+      suggested_alternative: "ฝุ่นน้อย"
+      position_in_text: "after ทิชชู่"
+    - term: "ปลอดภัยที่สุด"
+      category: "D-prohibited"
+      reason: "Superlative safety claim — unverified, implies medical certification."
+      suggested_alternative: "เหมาะกับการใช้งานทุกวัน"
+      position_in_text: "after 100%"
+  channel_specific_risks:
+    - channel: "TikTok"
+      risk: "ไร้ฝุ่น 100% and ปลอดภัยที่สุด may trigger TikTok health-content suppression"
+      recommendation: "Replace with ฝุ่นน้อย and เหมาะทุกวัน before uploading"
+  edited_content: "SoClean ทิชชู่ฝุ่นน้อย เหมาะกับการใช้งานทุกวัน เนียนนุ่ม สั่งได้เลย"
+  compliance_summary:
+    total_flagged: 2
+    blocked_count: 2
+    borderline_count: 0
+    is_publishable: false
+    human_review_required: true

@@ -1,0 +1,200 @@
+name: "Hook Generation"
+slug: "hook-generation-v1"
+version: "1.0"
+category: utility
+content_type: hooks
+channel: multi
+brand: soclean
+description: "Generate attention-grabbing opening hooks for SoClean TikTok videos and social posts"
+purpose: >
+  Generates a set of opening hooks optimised for TikTok and Facebook content.
+  Hooks must land in the first 2 seconds (video) or first line (post) to prevent scrolling.
+  Multiple hooks are generated per request so the marketer can select the strongest one.
+  Output is always DRAFT.
+claim_safety_required: true
+tags: [hook, opening, attention, tiktok, facebook, copywriting, utility]
+
+variables:
+  - name: content_topic
+    type: string
+    required: true
+    description: "The topic or angle of the content this hook will open"
+    example: "ฝุ่นน้อย เหมาะกับออฟฟิศ"
+  - name: target_channel
+    type: enum
+    required: true
+    description: "Channel the hook will be used on"
+    options: [TikTok, Facebook, Instagram, LINE]
+    example: "TikTok"
+  - name: hook_types
+    type: array
+    required: true
+    description: "Types of hooks to generate"
+    options:
+      - "question (เคย...ไหม?)"
+      - "surprising-fact"
+      - "relatable-problem"
+      - "bold-statement"
+      - "social-proof"
+      - "curiosity-gap"
+      - "before-after"
+      - "direct-cta-hook"
+    example: ["question (เคย...ไหม?)", "relatable-problem", "surprising-fact"]
+  - name: target_persona
+    type: enum
+    required: true
+    description: "Persona this hook should resonate with"
+    options: ["มิ้น (Gen Y Household)", "คุณแม่บ้าน (Family)", "พี่โอ๋ (Office)", "เจ้าของร้าน (Reseller)"]
+    example: "พี่โอ๋ (Office)"
+  - name: hook_count
+    type: integer
+    required: false
+    default: 5
+    description: "Total number of hook variants to generate (3–10)"
+    example: 5
+
+system_prompt: |
+  You are a TikTok and social media hook writer for SoClean by BN Paper, Thailand.
+  A "hook" is the opening line that must grab attention within 2 seconds and prevent scrolling.
+
+  ## Hook Writing Rules
+  1. Thai language: conversational, punchy, native-feeling.
+  2. Maximum 15 words per hook (TikTok text overlays must be fast to read).
+  3. No brand name in the hook unless it adds intrigue — let the hook earn the brand mention.
+  4. Types guide the approach — but the best hooks feel native, not formulaic.
+  5. Avoid starting with "SoClean คือ..." — boring product-first opening loses viewers.
+
+  ## Hook Type Guidance
+  - question: "เคยรำคาญฝุ่นทิชชู่ตกบนคีย์บอร์ดไหม?"
+  - surprising-fact: "ทิชชู่ 1 แพ็ค = 900 แผ่น รู้ยัง?"
+  - relatable-problem: "ฝุ่นทิชชู่บนโต๊ะดำ… อยากรู้ว่ามีทางแก้ไหม"
+  - bold-statement: "ทิชชู่ฝุ่นน้อยจริงหรือเปล่า — ดูนี่"
+  - social-proof: "ลูกค้าบอกว่า 'ฝุ่นน้อยจริงๆ' — มาดูกัน"
+  - curiosity-gap: "ทิชชู่ที่ซื้ออยู่ vs ที่ใช้จริง... ต่างกันยังไง?"
+  - before-after: "ก่อนเปลี่ยนมาใช้ SoClean vs หลัง — เห็นความต่างชัด"
+  - direct-cta-hook: "สั่ง 1 แพ็คก่อน แล้วจะรู้ว่าทำไมคนซื้อซ้ำ"
+
+  ## CRITICAL — CLAIM SAFETY RULES
+  NEVER use in hooks: ไร้ฝุ่น 100%, dust-free, antibacterial, สะอาดที่สุด, นุ่มที่สุด,
+  ปลอดภัยที่สุด, ดีที่สุด, อันดับ 1, hypoallergenic, medically safe
+  USE INSTEAD: ฝุ่นน้อย, เนียนนุ่ม, ให้สัมผัสสะอาด, คุ้มค่า
+
+  ## Output Format
+  Respond ONLY with a valid JSON object. No prose, no markdown.
+
+user_prompt: |
+  Generate opening hooks for SoClean content.
+
+  ## Input Variables
+  - Content topic: {{content_topic}}
+  - Target channel: {{target_channel}}
+  - Hook types requested: {{hook_types}}
+  - Target persona: {{target_persona}}
+  - Number of hooks: {{hook_count}}
+
+  ## Requirements
+  1. Generate {{hook_count}} hooks distributed across the requested {{hook_types}}.
+  2. Each hook: max 15 words Thai, punchy, native-feeling.
+  3. Tailor language to {{target_persona}} — their pain points, daily life, language style.
+  4. All hooks connect to {{content_topic}} — they should be accurate promises of the content.
+  5. Score each hook on: Attention (1–5), Clarity (1–5), Claim-safety (pass/fail).
+  6. Verify every hook against claim safety rules.
+
+  Return the JSON output now.
+
+output_format: json
+output_schema:
+  type: object
+  required: [hooks, recommended_hook, compliance_check]
+  properties:
+    hooks:
+      type: array
+      items:
+        type: object
+        required: [id, type, text, word_count, scores]
+        properties:
+          id: { type: integer }
+          type: { type: string }
+          text: { type: string }
+          word_count: { type: integer }
+          scores:
+            type: object
+            properties:
+              attention: { type: integer, minimum: 1, maximum: 5 }
+              clarity: { type: integer, minimum: 1, maximum: 5 }
+              claim_safe: { type: boolean }
+          usage_note: { type: string }
+    recommended_hook:
+      type: object
+      properties:
+        id: { type: integer }
+        reason: { type: string }
+    compliance_check:
+      type: object
+      required: [all_hooks_safe, flagged_hook_ids, is_safe]
+      properties:
+        all_hooks_safe: { type: boolean }
+        flagged_hook_ids: { type: array, items: { type: integer } }
+        is_safe: { type: boolean }
+
+example_input:
+  content_topic: "ฝุ่นน้อย เหมาะกับออฟฟิศ"
+  target_channel: "TikTok"
+  hook_types: ["question (เคย...ไหม?)", "relatable-problem", "surprising-fact", "bold-statement", "social-proof"]
+  target_persona: "พี่โอ๋ (Office)"
+  hook_count: 5
+
+example_output:
+  hooks:
+    - id: 1
+      type: "question (เคย...ไหม?)"
+      text: "เคยเจอฝุ่นทิชชู่ตกบนคีย์บอร์ดไหม?"
+      word_count: 9
+      scores:
+        attention: 5
+        clarity: 5
+        claim_safe: true
+      usage_note: "Great opener for office context — triggers immediate recognition of a common problem"
+    - id: 2
+      type: "relatable-problem"
+      text: "ฝุ่นทิชชู่บนจอคอม — รำคาญไหม?"
+      word_count: 7
+      scores:
+        attention: 4
+        clarity: 5
+        claim_safe: true
+      usage_note: "Specific office pain point — pairs well with a demo of the dark surface test"
+    - id: 3
+      type: "surprising-fact"
+      text: "1 แพ็ค SoClean = 900 แผ่น — คุ้มกว่าที่คิด"
+      word_count: 9
+      scores:
+        attention: 4
+        clarity: 5
+        claim_safe: true
+      usage_note: "Value hook — good for value-math content rather than low-dust demo"
+    - id: 4
+      type: "bold-statement"
+      text: "ทิชชู่ฝุ่นน้อย ดูได้เลย ไม่ต้องเชื่อ"
+      word_count: 8
+      scores:
+        attention: 5
+        clarity: 4
+        claim_safe: true
+      usage_note: "Challenge + proof invitation — must follow immediately with the demo"
+    - id: 5
+      type: "social-proof"
+      text: "ลูกค้าบอก 'ฝุ่นน้อยจริง ออฟฟิศไม่เลอะ'"
+      word_count: 8
+      scores:
+        attention: 4
+        clarity: 5
+        claim_safe: true
+      usage_note: "Lead with a real review quote — always attribute to source"
+  recommended_hook:
+    id: 1
+    reason: "Highest attention score, directly addresses the office buyer's pain point, and sets up the low-dust demo content perfectly"
+  compliance_check:
+    all_hooks_safe: true
+    flagged_hook_ids: []
+    is_safe: true

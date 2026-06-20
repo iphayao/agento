@@ -1,0 +1,152 @@
+# Shared Brand Context — SoClean / BN Paper
+# Embed the relevant sections of this file into system prompts.
+# Source of truth: packages/brand-kit/soclean/brand-profile.md
+#                  packages/brand-kit/soclean/messaging-framework.md
+
+brand_context:
+  version: "1.0"
+  brand: soclean
+
+  identity:
+    brand_name: SoClean
+    company: BN Paper
+    country: Thailand
+    category: Facial tissue
+    primary_language: Thai
+    secondary_language: English (select channels)
+
+  positioning:
+    thai: "สะอาด เนียนนุ่ม ฝุ่นน้อย"
+    english: "Clean feel, soft touch, low-dust tissue for everyday life."
+    brand_promise: >
+      SoClean gives you a clean, smooth tissue experience with less dust —
+      suitable for daily use at home, office, and shop.
+      Not the absolute softest. Not dust-free. A genuinely good daily-use
+      tissue at real value.
+
+  product_specs:
+    type: Facial tissue
+    ply: 2
+    sheets_per_box: 180
+    boxes_per_pack: 5
+    sheets_per_pack: 900  # 180 × 5
+    packs_per_carton: 50
+    sheets_per_carton: 45000  # 900 × 50
+    key_differentiator: "Low-dust / reduced-dust"
+    texture: "Soft, smooth"
+    intended_use: "Face, hands, desk, home, office"
+
+  content_pillars:
+    - id: P1
+      thai: เนียนนุ่ม
+      english: Softness
+      frequency: "2–3× per week"
+    - id: P2
+      thai: สะอาด
+      english: Clean Feel
+      frequency: "1–2× per week"
+    - id: P3
+      thai: ฝุ่นน้อย
+      english: Low Dust
+      frequency: "1–2× per week"
+    - id: P4
+      thai: คุ้มค่า
+      english: Value
+      frequency: "2× per week"
+    - id: P5
+      thai: เหมาะทุกที่
+      english: Versatile Use
+      frequency: "1× per week"
+    - id: P6
+      thai: รีวิวจากลูกค้าจริง
+      english: Customer Reviews
+      frequency: "1–2× per week"
+    - id: P7
+      thai: ซื้อยกลังสำหรับร้านค้า
+      english: Reseller Carton Buying
+      frequency: "2× per month"
+
+  personas:
+    - id: P1
+      name: "น้องมิ้น"
+      segment: "Gen Y Household Buyer (primary)"
+      age: "27–35"
+      gender: Female
+      channels: [TikTok, Shopee]
+      key_message: "ทิชชู่ที่นุ่มสบาย ฝุ่นน้อย สั่งได้ทุกเดือน"
+    - id: P2
+      name: "คุณแม่บ้าน"
+      segment: "Practical Family Manager"
+      age: "35–50"
+      gender: Female
+      channels: [Lazada, Shopee, Facebook]
+      key_message: "ทิชชู่ดี ทนทาน ใช้ได้ทั้งบ้าน ราคาไม่หนักกระเป๋า"
+    - id: P3
+      name: "พี่โอ๋"
+      segment: "Office Supply Manager"
+      age: "28–42"
+      gender: Any
+      channels: [Lazada, Shopee]
+      key_message: "ทิชชู่ฝุ่นน้อย เหมาะออฟฟิศ ซื้อยกลังคุ้มกว่า"
+    - id: P4
+      name: "เจ้าของร้าน"
+      segment: "Reseller / Shop Owner"
+      age: "30–55"
+      gender: Any
+      channels: [LINE, Facebook, Direct]
+      key_message: "ทิชชู่ที่ลูกค้าซื้อซ้ำ ส่งเร็ว กำไรดี ซื้อยกลังได้เลย"
+
+  channels:
+    tiktok:
+      caption_max_chars: 100
+      video_length_organic: "15–60s"
+      video_length_ad: "6–15s"
+      tone: "Conversational, energetic, native Thai"
+      hashtag_count: "5–10"
+    shopee:
+      title_max_chars: 100
+      description_chars: "500–1,000"
+      tone: "Formal-practical Thai"
+      hashtag_count: 0
+    lazada:
+      title_max_chars: 120
+      description_chars: "500–800"
+      tone: "Professional-practical Thai"
+      office_b2b_focus: true
+    facebook:
+      caption_chars: "100–250"
+      tone: "Warm, community-oriented"
+      hashtag_count: "3–5"
+    reseller:
+      channel: "LINE / Direct"
+      tone: "Businesslike but friendly, relationship-building"
+      format: "Direct broadcast or 1-to-1 message"
+
+  tone_of_voice:
+    traits: [Warm, Honest, Practical, Confident]
+    avoid: [Over-promising, Clinical, Pushy, Salesy]
+    register:
+      tiktok: "ภาษาพูด (conversational Thai)"
+      facebook: "ภาษาพูด to ภาษาไทยกลาง"
+      shopee: "ภาษาไทยกลาง (formal-practical)"
+      lazada: "ภาษาไทยกลาง (formal-practical)"
+      reseller: "ภาษาไทยกลาง (businesslike)"
+    emoji_usage:
+      tiktok: "Sparingly — 1–3 per caption"
+      facebook: "Sparingly — 1–3 per post"
+      shopee: "Avoid in title; minimal in description"
+      lazada: "Avoid in title; minimal in description"
+
+  core_hashtags:
+    - "#SoClean"
+    - "#ทิชชู่SoClean"
+    - "#BNPaper"
+  context_hashtags:
+    - "#ทิชชู่นุ่ม"
+    - "#ฝุ่นน้อย"
+    - "#ทิชชู่ราคาดี"
+    - "#ซื้อยกลัง"
+    - "#ร้านค้าออนไลน์"
+    - "#ของใช้ในบ้าน"
+    - "#ทิชชู่ออฟฟิศ"
+    - "#ทิชชู่หน้า"

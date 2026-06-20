@@ -1,0 +1,198 @@
+name: "Value-Pack-Focused Content"
+slug: "value-pack-focused-v1"
+version: "1.0"
+category: generation
+content_type: pillar-content
+channel: multi
+brand: soclean
+description: "Content centred on the คุ้มค่า (value) pillar — pack math, carton savings, price-per-sheet framing"
+purpose: >
+  Generates value-focused content using concrete sheet-count math to make SoClean's
+  price-per-use tangible. Targets household buyers, office buyers, and resellers with
+  the 900-sheets-per-pack and 45,000-sheets-per-carton value proposition.
+  Output is always DRAFT — pricing figures must be verified before publishing.
+claim_safety_required: true
+tags: [value, pillar, คุ้มค่า, math, carton, household, office, reseller]
+
+variables:
+  - name: value_angle
+    type: enum
+    required: true
+    description: "Specific value angle to highlight"
+    options:
+      - "pack-math (900 sheets per pack)"
+      - "carton-savings (50 packs per carton)"
+      - "daily-use-calculation"
+      - "price-per-sheet"
+      - "compare-pack-vs-carton"
+    example: "pack-math (900 sheets per pack)"
+  - name: target_persona
+    type: enum
+    required: true
+    description: "Persona to write for"
+    options: ["มิ้น (Gen Y Household)", "คุณแม่บ้าน (Family)", "พี่โอ๋ (Office)", "เจ้าของร้าน (Reseller)"]
+    example: "คุณแม่บ้าน (Family)"
+  - name: target_channel
+    type: enum
+    required: true
+    description: "Channel for this content"
+    options: [TikTok, Facebook, Shopee, Lazada, LINE]
+    example: "Facebook"
+  - name: format
+    type: enum
+    required: true
+    description: "Content format to produce"
+    options: [caption, post, infographic-copy, script-outline]
+    example: "post"
+  - name: family_size
+    type: integer
+    required: false
+    description: "Family or team size for daily-use-calculation angle (e.g. 4 for a family of 4)"
+    example: 4
+  - name: content_count
+    type: integer
+    required: false
+    default: 2
+    description: "Number of variants (1–3)"
+    example: 2
+
+system_prompt: |
+  You are a value-focused copywriter for SoClean by BN Paper, Thailand.
+  Your role is to make SoClean's value tangible through concrete math and relatable comparisons.
+  Thai buyers respond well to visible value calculations — sheet counts, pack savings, monthly use.
+
+  ## Key Value Facts (VERIFIED — use freely)
+  - 1 box = 180 sheets (2-ply)
+  - 1 pack = 5 boxes = 900 sheets
+  - 1 carton = 50 packs = 45,000 sheets
+  - Family of 4 using 30 sheets/day: 1 pack lasts 30 days
+  - Carton pricing: lower per-unit cost than buying by pack
+
+  ## CRITICAL — PRICING CLAIMS
+  - Never state a specific price unless it is provided in the input variables.
+  - All pricing copy must be flagged for human verification before publishing.
+  - "ราคาดี" and "คุ้มค่า" are safe general value claims.
+  - "ถูกที่สุด" (cheapest) is prohibited without verified comparison data.
+
+  ## CRITICAL — CLAIM SAFETY RULES
+  NEVER use: ถูกที่สุด, cheapest, ลดราคาสูงสุด (without basis), ดีที่สุด, อันดับ 1
+  USE INSTEAD: คุ้มค่า, ราคาดี, ประหยัดกว่า, 900 แผ่นต่อแพ็ค, คุ้มค่าสำหรับบ้าน ร้านค้า และออฟฟิศ
+
+  ## Output Format
+  Respond ONLY with a valid JSON object. No prose, no markdown.
+
+user_prompt: |
+  Generate value-pillar content for SoClean.
+
+  ## Input Variables
+  - Value angle: {{value_angle}}
+  - Target persona: {{target_persona}}
+  - Target channel: {{target_channel}}
+  - Format: {{format}}
+  - Family/team size: {{family_size}}
+  - Number of variants: {{content_count}}
+
+  ## Requirements
+  1. Lead with a concrete number or math that makes value tangible.
+  2. Tailor the math to {{target_persona}}:
+     - Family: sheets per day × family members = days per pack
+     - Office: pack/carton cost for a team
+     - Reseller: carton format, resale margin framing
+  3. Connect value math to the product (เนียนนุ่ม ฝุ่นน้อย คุ้มค่า — quality you can feel).
+  4. Format rules:
+     - caption: 50–100 Thai chars + hashtags
+     - post: 100–250 Thai chars with the math clearly shown
+     - infographic-copy: headline + 3–4 data points for a graphic
+     - script-outline: 5 scene bullets including value callout graphic
+  5. Never state a specific price unless given in input. Flag pricing note in compliance check.
+  6. Verify all claims — no superlatives for cheapest/best.
+
+  Return the JSON output now.
+
+output_format: json
+output_schema:
+  type: object
+  required: [content_pieces, key_numbers, hashtags, compliance_check]
+  properties:
+    content_pieces:
+      type: array
+      items:
+        type: object
+        required: [variant, format, channel, body]
+        properties:
+          variant: { type: integer }
+          format: { type: string }
+          channel: { type: string }
+          body: { type: string }
+          character_count: { type: integer }
+    key_numbers:
+      type: object
+      description: "The value math facts used in this content"
+      properties:
+        sheets_per_pack: { type: integer }
+        sheets_per_carton: { type: integer }
+        days_per_pack_estimate: { type: string }
+    hashtags:
+      type: array
+      items: { type: string }
+    compliance_check:
+      type: object
+      required: [approved_claims_used, prohibited_terms_detected, is_safe, pricing_requires_human_verification]
+      properties:
+        approved_claims_used: { type: array, items: { type: string } }
+        prohibited_terms_detected: { type: array, items: { type: string } }
+        is_safe: { type: boolean }
+        pricing_requires_human_verification:
+          type: boolean
+          description: "True if any pricing reference appears in the content"
+
+example_input:
+  value_angle: "daily-use-calculation"
+  target_persona: "คุณแม่บ้าน (Family)"
+  target_channel: "Facebook"
+  format: "post"
+  family_size: 4
+  content_count: 2
+
+example_output:
+  content_pieces:
+    - variant: 1
+      format: "post"
+      channel: "Facebook"
+      body: |
+        คิดดูสิ…
+
+        SoClean 1 แพ็ค = 5 กล่อง = 900 แผ่น
+        ครอบครัว 4 คน ใช้วันละ 30 แผ่น = ใช้ได้ 30 วัน 🗓️
+
+        เนียนนุ่ม ฝุ่นน้อย คุ้มค่าสำหรับบ้านและทุกคนในครอบครัว
+        สั่งได้เลยที่ Shopee / Lazada 🛒
+      character_count: 196
+    - variant: 2
+      format: "post"
+      channel: "Facebook"
+      body: |
+        ทิชชู่ดี ไม่ต้องซื้อบ่อย
+
+        900 แผ่น/แพ็ค — ครอบครัว 4 คน ใช้ได้เต็มเดือน
+        SoClean เนียนนุ่ม ฝุ่นน้อย คุ้มค่าแน่นอน 🏠
+      character_count: 117
+  key_numbers:
+    sheets_per_pack: 900
+    sheets_per_carton: 45000
+    days_per_pack_estimate: "ครอบครัว 4 คน ใช้วันละ 30 แผ่น = ประมาณ 30 วัน"
+  hashtags:
+    - "#SoClean"
+    - "#ทิชชู่SoClean"
+    - "#คุ้มค่า"
+    - "#ของใช้ในบ้าน"
+    - "#ทิชชู่ราคาดี"
+  compliance_check:
+    approved_claims_used:
+      - "คุ้มค่า"
+      - "เนียนนุ่ม"
+      - "ฝุ่นน้อย"
+      - "900 แผ่น/แพ็ค"
+    prohibited_terms_detected: []
+    is_safe: true
+    pricing_requires_human_verification: false

@@ -1,0 +1,242 @@
+name: "TikTok Video Script"
+slug: "tiktok-video-script-v1"
+version: "1.0"
+category: generation
+content_type: video-script
+channel: tiktok
+brand: soclean
+description: "Scene-by-scene TikTok video script for SoClean with hook, visuals, text overlays, and voiceover"
+purpose: >
+  Generates a structured, scene-by-scene TikTok video script optimised for organic reach.
+  Use this template when planning a new TikTok video for any SoClean content pillar.
+  Output is always DRAFT — requires human review before production.
+claim_safety_required: true
+tags: [tiktok, video, script, organic, social]
+
+variables:
+  - name: content_pillar
+    type: enum
+    required: true
+    description: "Primary content pillar this video should focus on"
+    options: [เนียนนุ่ม, สะอาด, ฝุ่นน้อย, คุ้มค่า, เหมาะทุกที่, รีวิวลูกค้า, ซื้อยกลัง]
+    example: "ฝุ่นน้อย"
+  - name: target_persona
+    type: enum
+    required: true
+    description: "Primary audience persona for this video"
+    options: ["มิ้น (Gen Y Household)", "คุณแม่บ้าน (Family)", "พี่โอ๋ (Office)", "เจ้าของร้าน (Reseller)"]
+    example: "มิ้น (Gen Y Household)"
+  - name: video_duration_seconds
+    type: integer
+    required: true
+    description: "Target video duration in seconds (15, 30, 45, or 60)"
+    options: [15, 30, 45, 60]
+    example: 30
+  - name: campaign_theme
+    type: string
+    required: false
+    description: "Optional campaign or seasonal theme, e.g. 'back to school', 'end-of-month sale'"
+    example: ""
+  - name: key_message
+    type: string
+    required: true
+    description: "The single most important message this video should communicate"
+    example: "SoClean ฝุ่นน้อย เหมาะกับออฟฟิศและบ้าน"
+  - name: call_to_action
+    type: string
+    required: true
+    description: "The desired viewer action — shown in the final scene"
+    example: "สั่งซื้อเลยที่ TikTok Shop"
+  - name: tone
+    type: enum
+    required: false
+    description: "Tone of the video script"
+    options: [playful, warm, practical, educational]
+    default: warm
+    example: "practical"
+
+system_prompt: |
+  You are a TikTok content creator and scriptwriter for SoClean, a facial tissue brand by BN Paper, Thailand.
+
+  ## Brand Context
+  - Brand: SoClean | Company: BN Paper | Market: Thailand
+  - Product: Facial tissue, 2-ply, 180 sheets/box, Pack of 5 (900 sheets/pack), Carton of 50 packs (45,000 sheets)
+  - Positioning (Thai): "สะอาด เนียนนุ่ม ฝุ่นน้อย"
+  - Brand voice: Warm, honest, practical, confident. Never over-promises.
+  - Language: Thai (ภาษาพูด — conversational register for TikTok)
+
+  ## TikTok Format Rules
+  - Hook must land in the first 2 seconds — use movement, text, or surprise.
+  - Each scene has: visual description, action, text overlay (Thai), voiceover (Thai), audio note.
+  - Keep scenes punchy: 3–8 seconds each.
+  - Emoji in text overlays: sparingly, 1–2 max.
+  - Caption: 50–100 Thai characters + 5–10 hashtags (always include #SoClean #ทิชชู่SoClean #BNPaper).
+
+  ## CRITICAL — CLAIM SAFETY RULES
+  NEVER use these terms in any part of the output:
+  THAI PROHIBITED: ไร้ฝุ่น 100%, ไม่มีฝุ่นเลย, ปลอดฝุ่นสมบูรณ์แบบ, antibacterial, ฆ่าเชื้อโรค,
+  medically safe, ปลอดภัยทางการแพทย์, hypoallergenic, dermatologist, ทดสอบโดยแพทย์,
+  สะอาดที่สุด, นุ่มที่สุด, ปลอดภัยที่สุด, ดีที่สุด, อันดับ 1, ขายดีที่สุด
+  ENGLISH PROHIBITED: dust-free, zero dust, 100% dust, antibacterial, medically safe,
+  hypoallergenic, dermatologist, safest, cleanest, softest, best tissue
+
+  APPROVED ALTERNATIVES:
+  - Use ฝุ่นน้อย (not ไร้ฝุ่น 100%)
+  - Use เนียนนุ่ม (not นุ่มที่สุด)
+  - Use ให้สัมผัสสะอาด (not สะอาดที่สุด / antibacterial)
+  - Use เหมาะกับการใช้งานทุกวัน (not medically safe)
+  - Use คุ้มค่า (not ดีที่สุด / ถูกที่สุด without proof)
+
+  ## Output Format
+  Respond ONLY with a valid JSON object matching the specified schema. No prose, no markdown.
+
+user_prompt: |
+  Generate a TikTok video script for SoClean.
+
+  ## Input Variables
+  - Content pillar: {{content_pillar}}
+  - Target persona: {{target_persona}}
+  - Video duration: {{video_duration_seconds}} seconds
+  - Campaign theme: {{campaign_theme}}
+  - Key message: {{key_message}}
+  - Call to action: {{call_to_action}}
+  - Tone: {{tone}}
+
+  ## Requirements
+  1. Write a scene-by-scene script with the exact number of scenes needed to fill {{video_duration_seconds}} seconds.
+  2. Scene 1 must contain the hook within the first 2 seconds.
+  3. Middle scenes demonstrate the product or tell a story aligned with {{content_pillar}}.
+  4. Final scene includes the call to action: {{call_to_action}}.
+  5. All Thai copy must use conversational register (ภาษาพูด).
+  6. Check every word against claim safety rules before outputting.
+  7. Include a caption and hashtag suggestions at the end.
+
+  Return the JSON output now.
+
+output_format: json
+output_schema:
+  type: object
+  required: [script, caption_suggestion, hashtag_suggestions, compliance_check]
+  properties:
+    script:
+      type: object
+      required: [title, hook, scenes, closing_cta, estimated_duration_seconds]
+      properties:
+        title:
+          type: string
+          description: "Working title for internal reference"
+        hook:
+          type: string
+          description: "The opening hook text/voiceover — grabs attention in 2 seconds"
+        scenes:
+          type: array
+          items:
+            type: object
+            required: [scene_number, time_range, visual, text_overlay, voiceover]
+            properties:
+              scene_number: { type: integer }
+              time_range: { type: string, description: "e.g. 0–3s" }
+              visual: { type: string, description: "Camera / visual direction" }
+              action: { type: string, description: "What happens on screen" }
+              text_overlay: { type: string, description: "Thai text shown on screen" }
+              voiceover: { type: string, description: "Thai voiceover or audio narration" }
+              audio_note: { type: string, description: "Music/sound direction" }
+        closing_cta:
+          type: string
+          description: "Call to action shown in the final scene"
+        estimated_duration_seconds:
+          type: integer
+    caption_suggestion:
+      type: string
+      description: "TikTok caption (50–100 Thai chars, no hashtags)"
+    hashtag_suggestions:
+      type: array
+      items: { type: string }
+      description: "5–10 hashtags including #SoClean #ทิชชู่SoClean #BNPaper"
+    compliance_check:
+      type: object
+      required: [approved_claims_used, prohibited_terms_detected, is_safe]
+      properties:
+        approved_claims_used:
+          type: array
+          items: { type: string }
+          description: "Approved claim phrases used in this script"
+        prohibited_terms_detected:
+          type: array
+          items: { type: string }
+          description: "Any prohibited terms found — must be empty for safe content"
+        is_safe:
+          type: boolean
+          description: "True only if prohibited_terms_detected is empty"
+
+example_input:
+  content_pillar: "ฝุ่นน้อย"
+  target_persona: "พี่โอ๋ (Office)"
+  video_duration_seconds: 30
+  campaign_theme: ""
+  key_message: "SoClean ฝุ่นน้อย ไม่รบกวนโต๊ะทำงาน"
+  call_to_action: "สั่งซื้อได้เลยที่ TikTok Shop"
+  tone: "practical"
+
+example_output:
+  script:
+    title: "ฝุ่นน้อย ออฟฟิศสะอาด"
+    hook: "เคยเจอฝุ่นทิชชู่ตกบนคีย์บอร์ดไหม?"
+    scenes:
+      - scene_number: 1
+        time_range: "0–3s"
+        visual: "Extreme close-up — white tissue pulled from box in slow motion, minimal dust visible"
+        action: "Open tissue box slowly; light catches minimal dust particles"
+        text_overlay: "ฝุ่นน้อย… ต่างกันตรงนี้"
+        voiceover: "เคยรำคาญฝุ่นทิชชู่ไหมคะ?"
+        audio_note: "Soft ambient tone — no music yet"
+      - scene_number: 2
+        time_range: "3–10s"
+        visual: "Tissue placed on a dark keyboard — minimal white residue"
+        action: "Wipe keyboard gently; camera reveals very little dust on dark surface"
+        text_overlay: "SoClean — ฝุ่นน้อย เห็นความต่างได้เอง"
+        voiceover: "SoClean ฝุ่นน้อย ไม่ทิ้งคราบบนโต๊ะและคีย์บอร์ด"
+        audio_note: "Upbeat lo-fi starts softly"
+      - scene_number: 3
+        time_range: "10–20s"
+        visual: "Clean office desk — SoClean pack sitting neatly next to laptop"
+        action: "Person at desk uses tissue, smiles, returns to work"
+        text_overlay: "เนียนนุ่ม ฝุ่นน้อย เหมาะสำหรับออฟฟิศ"
+        voiceover: "2 ชั้น 180 แผ่น ให้สัมผัสนุ่ม และฝุ่นน้อยกว่า"
+        audio_note: "Music builds slightly"
+      - scene_number: 4
+        time_range: "20–27s"
+        visual: "Pack of 5 boxes shown — 900 แผ่น value callout graphic"
+        action: "Graphic overlay: '1 แพ็ค = 900 แผ่น'"
+        text_overlay: "แพ็ค 5 กล่อง = 900 แผ่น คุ้มค่า ใช้ได้นาน"
+        voiceover: "คุ้มค่า ซื้อยกลังสำหรับออฟฟิศก็ได้นะคะ"
+        audio_note: "Music peak"
+      - scene_number: 5
+        time_range: "27–30s"
+        visual: "Product pack with TikTok Shop logo"
+        action: "Text CTA appears with tap-to-shop icon"
+        text_overlay: "สั่งซื้อได้เลยที่ TikTok Shop 🛒"
+        voiceover: "สั่งซื้อได้เลยค่ะ"
+        audio_note: "Music out"
+    closing_cta: "สั่งซื้อได้เลยที่ TikTok Shop"
+    estimated_duration_seconds: 30
+  caption_suggestion: "ทิชชู่ฝุ่นน้อย เหมาะสำหรับออฟฟิศ สัมผัสนุ่ม คุ้มค่า สั่งเลย 🤍"
+  hashtag_suggestions:
+    - "#SoClean"
+    - "#ทิชชู่SoClean"
+    - "#BNPaper"
+    - "#ฝุ่นน้อย"
+    - "#ทิชชู่ออฟฟิศ"
+    - "#ทิชชู่หน้า"
+    - "#ของใช้ออฟฟิศ"
+    - "#ทิชชู่ราคาดี"
+  compliance_check:
+    approved_claims_used:
+      - "ฝุ่นน้อย"
+      - "เนียนนุ่ม"
+      - "ให้สัมผัสนุ่ม"
+      - "ฝุ่นน้อยกว่า"
+      - "คุ้มค่า"
+      - "900 แผ่น"
+    prohibited_terms_detected: []
+    is_safe: true

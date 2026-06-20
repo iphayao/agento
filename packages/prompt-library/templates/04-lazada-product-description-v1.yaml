@@ -1,0 +1,161 @@
+name: "Lazada Product Description"
+slug: "lazada-product-description-v1"
+version: "1.0"
+category: generation
+content_type: product-description
+channel: lazada
+brand: soclean
+description: "Full Lazada product listing — title + description (500–800 chars) with office/B2B emphasis"
+purpose: >
+  Generates a Lazada product listing with a title (≤120 chars) and Thai description
+  optimised for office buyers and resellers who browse Lazada. Leads with the low-dust /
+  office suitability angle and includes carton pricing information.
+  Output is always DRAFT — requires human review before publishing.
+claim_safety_required: true
+tags: [lazada, listing, product-description, ecommerce, office, b2b]
+
+variables:
+  - name: focus_pillar
+    type: enum
+    required: true
+    description: "Primary benefit angle to lead with"
+    options: [ฝุ่นน้อย, เนียนนุ่ม, คุ้มค่า, เหมาะออฟฟิศ]
+    example: "เหมาะออฟฟิศ"
+  - name: target_persona
+    type: enum
+    required: true
+    description: "Primary persona for this listing"
+    options: ["พี่โอ๋ (Office)", "เจ้าของร้าน (Reseller)", "คุณแม่บ้าน (Family)"]
+    example: "พี่โอ๋ (Office)"
+  - name: include_wholesale_cta
+    type: boolean
+    required: false
+    default: true
+    description: "Whether to include a wholesale/carton inquiry CTA in the listing"
+    example: true
+  - name: review_highlights
+    type: array
+    required: false
+    description: "1–2 office-relevant customer review snippets"
+    example: ["ฝุ่นน้อยจริงๆ ออฟฟิศไม่ฝุ่น", "สั่งยกลัง ราคาดี ส่งเร็ว"]
+  - name: promotion_note
+    type: string
+    required: false
+    description: "Optional promotion text, e.g. 'ซื้อยกลัง ราคาพิเศษ'"
+    example: ""
+
+system_prompt: |
+  You are a Lazada product listing specialist for SoClean, a facial tissue brand by BN Paper, Thailand.
+  Lazada's buyer audience skews toward office supply managers and B2B resellers, so listings should
+  emphasise low-dust office suitability, carton pricing, and consistent quality.
+
+  ## Brand Context
+  - Brand: SoClean | Company: BN Paper
+  - Product: Facial tissue, 2-ply, 180 sheets/box, Pack of 5 (900 sheets/pack), Carton 50 packs (45,000 sheets)
+  - Positioning: "สะอาด เนียนนุ่ม ฝุ่นน้อย" — practical, honest everyday value
+  - Language register: ภาษาไทยกลาง — professional and practical, not casual
+
+  ## Lazada Listing Structure
+  Title: max 120 chars | no emoji | include ทิชชู่ + key specs + office/bulk angle
+  Description: 500–800 Thai chars in order:
+    1. Lead benefit hook (office / low-dust angle)
+    2. Product specs (2-ply, 180 sheets, pack of 5, carton of 50 packs)
+    3. Benefits bullets (3–4, claim-safe)
+    4. Office and B2B use-case statement
+    5. Carton pricing note (if include_wholesale_cta true)
+    6. Reviews (if provided)
+
+  ## CRITICAL — CLAIM SAFETY RULES
+  NEVER use: ไร้ฝุ่น 100%, dust-free, antibacterial, ฆ่าเชื้อโรค, medically safe,
+  hypoallergenic, dermatologist, สะอาดที่สุด, นุ่มที่สุด, ปลอดภัยที่สุด, ดีที่สุด, อันดับ 1
+  USE INSTEAD: ฝุ่นน้อย, เนียนนุ่ม, ให้สัมผัสสะอาด, เหมาะกับการใช้งานทุกวัน, คุ้มค่า
+
+  ## Output Format
+  Respond ONLY with a valid JSON object. No prose, no markdown.
+
+user_prompt: |
+  Generate a Lazada product listing for SoClean facial tissue.
+
+  ## Input Variables
+  - Focus pillar: {{focus_pillar}}
+  - Target persona: {{target_persona}}
+  - Include wholesale CTA: {{include_wholesale_cta}}
+  - Review highlights: {{review_highlights}}
+  - Promotion note: {{promotion_note}}
+
+  ## Requirements
+  1. Title: max 120 chars, no emoji, professional tone, office/bulk keyword included.
+  2. Description: 500–800 Thai chars, lead with {{focus_pillar}}.
+  3. Write for {{target_persona}} — address their specific concerns (dust in office, bulk pricing, quality).
+  4. If include_wholesale_cta is true, include: "สนใจซื้อยกลัง ติดต่อสอบถามได้เลย".
+  5. If review_highlights provided, embed with attribution "รีวิวจาก Lazada".
+  6. Verify every claim against claim safety rules.
+
+  Return the JSON output now.
+
+output_format: json
+output_schema:
+  type: object
+  required: [title, title_character_count, description, description_character_count, compliance_check]
+  properties:
+    title: { type: string }
+    title_character_count: { type: integer }
+    description: { type: string }
+    description_character_count: { type: integer }
+    key_benefits: { type: array, items: { type: string } }
+    compliance_check:
+      type: object
+      required: [approved_claims_used, prohibited_terms_detected, is_safe]
+      properties:
+        approved_claims_used: { type: array, items: { type: string } }
+        prohibited_terms_detected: { type: array, items: { type: string } }
+        is_safe: { type: boolean }
+
+example_input:
+  focus_pillar: "เหมาะออฟฟิศ"
+  target_persona: "พี่โอ๋ (Office)"
+  include_wholesale_cta: true
+  review_highlights:
+    - "ฝุ่นน้อยจริงๆ ออฟฟิศไม่ฝุ่น"
+    - "สั่งยกลัง ราคาดี ส่งเร็ว"
+  promotion_note: ""
+
+example_output:
+  title: "SoClean ทิชชู่หน้า 2ชั้น 180แผ่น แพ็ค5กล่อง ฝุ่นน้อย เหมาะออฟฟิศ ซื้อยกลังได้"
+  title_character_count: 80
+  description: |
+    🏢 เหมาะสำหรับออฟฟิศ — ฝุ่นน้อย ไม่รบกวนพื้นที่ทำงาน
+
+    📦 รายละเอียดสินค้า
+    • ทิชชู่ 2 ชั้น | 180 แผ่น/กล่อง
+    • 1 แพ็ค = 5 กล่อง = 900 แผ่น
+    • 1 ลัง = 50 แพ็ค = 45,000 แผ่น
+
+    ✅ จุดเด่น
+    • ฝุ่นน้อย ไม่ตกบนคีย์บอร์ดและจอมอนิเตอร์
+    • เนียนนุ่ม ใช้ได้ทุกโต๊ะทำงาน
+    • คุ้มค่า ซื้อยกลังสำหรับออฟฟิศขนาดใหญ่
+    • เหมาะกับการใช้งานต่อเนื่องทุกวัน
+
+    💼 เหมาะสำหรับสำนักงาน SME และออฟฟิศทุกขนาด
+    สต็อกได้ ไม่ขาดมือ สั่งซ้ำได้ตลอด
+
+    📦 สนใจซื้อยกลัง ติดต่อสอบถามได้เลย
+
+    ⭐ รีวิวจาก Lazada
+    "ฝุ่นน้อยจริงๆ ออฟฟิศไม่ฝุ่น"
+    "สั่งยกลัง ราคาดี ส่งเร็ว"
+  description_character_count: 598
+  key_benefits:
+    - "ฝุ่นน้อย ไม่ตกบนคีย์บอร์ดและจอ"
+    - "เนียนนุ่ม เหมาะสำนักงาน"
+    - "คุ้มค่า ซื้อยกลังได้"
+    - "เหมาะกับการใช้งานต่อเนื่องทุกวัน"
+  compliance_check:
+    approved_claims_used:
+      - "ฝุ่นน้อย"
+      - "เนียนนุ่ม"
+      - "คุ้มค่า"
+      - "เหมาะกับการใช้งานต่อเนื่องทุกวัน"
+    prohibited_terms_detected: []
+    is_safe: true

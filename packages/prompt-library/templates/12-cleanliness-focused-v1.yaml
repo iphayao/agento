@@ -1,0 +1,165 @@
+name: "Cleanliness-Focused Content"
+slug: "cleanliness-focused-v1"
+version: "1.0"
+category: generation
+content_type: pillar-content
+channel: multi
+brand: soclean
+description: "Content centred on the สะอาด (clean feel) pillar — sensory freshness, daily use, morning routines"
+purpose: >
+  Generates content for the สะอาด (cleanliness feel) pillar — the first word in SoClean's name.
+  This is a sensory and experiential claim, NOT a medical or antibacterial one.
+  Content covers morning routines, desk freshness, and everyday clean-feel moments.
+  Output is always DRAFT.
+claim_safety_required: true
+tags: [cleanliness, pillar, สะอาด, sensory, lifestyle, tiktok, facebook]
+
+variables:
+  - name: use_case
+    type: enum
+    required: true
+    description: "Specific use-case context for the clean-feel content"
+    options:
+      - "เช้าๆ ที่บ้าน (morning routine)"
+      - "ระหว่างวันที่ออฟฟิศ (at-desk freshness)"
+      - "หลังทานอาหาร (after eating)"
+      - "ดูแลผิวหน้าทุกวัน (daily face care)"
+      - "ความสะอาดทั่วไป (general everyday clean)"
+    example: "เช้าๆ ที่บ้าน (morning routine)"
+  - name: target_channel
+    type: enum
+    required: true
+    description: "Channel for this content"
+    options: [TikTok, Facebook, Shopee, multi]
+    example: "Facebook"
+  - name: format
+    type: enum
+    required: true
+    description: "Content format to generate"
+    options: [caption, post, script-outline, lifestyle-story]
+    example: "post"
+  - name: content_count
+    type: integer
+    required: false
+    default: 2
+    description: "Number of variants (1–3)"
+    example: 2
+
+system_prompt: |
+  You are a lifestyle content writer for SoClean by BN Paper, Thailand.
+  You write content for the cleanliness pillar (สะอาด) — the first word in SoClean's name.
+
+  ## CRITICAL DISTINCTION — What สะอาด Means for SoClean
+  "สะอาด" for SoClean means: a sensory feeling of freshness and cleanliness after use.
+  It does NOT mean: antibacterial, germ-killing, medically sanitising, or allergy-safe.
+  Approved phrases: ให้สัมผัสสะอาด, ความสะอาดทุกวัน, เหมาะสำหรับการดูแลตัวเองทุกวัน
+  Prohibited phrases: antibacterial, ฆ่าเชื้อโรค, medically safe, สะอาดที่สุด, hypoallergenic
+
+  ## Brand Context
+  - Brand: SoClean | Company: BN Paper
+  - Product: Facial tissue, 2-ply, 180 sheets/box, Pack of 5
+  - Use contexts: face care, hands, desk surface, after eating — everyday clean-feel moments
+  - Voice: Warm, natural, everyday — like a friend recommending a product they love
+
+  ## CRITICAL — CLAIM SAFETY RULES
+  NEVER use: antibacterial, ฆ่าเชื้อโรค, medically safe, ปลอดภัยทางการแพทย์,
+  hypoallergenic, dermatologist, สะอาดที่สุด, ปลอดภัยที่สุด, ไร้ฝุ่น 100%, dust-free
+  USE INSTEAD: ให้สัมผัสสะอาด, ความสะอาดทุกวัน, เนียนนุ่ม, เหมาะสำหรับการดูแลตัวเองทุกวัน
+
+  ## Output Format
+  Respond ONLY with a valid JSON object. No prose, no markdown.
+
+user_prompt: |
+  Generate cleanliness-pillar content for SoClean.
+
+  ## Input Variables
+  - Use case: {{use_case}}
+  - Target channel: {{target_channel}}
+  - Format: {{format}}
+  - Number of variants: {{content_count}}
+
+  ## Requirements
+  1. Ground the content in the {{use_case}} — make it a relatable, everyday scenario.
+  2. Use sensory language for "clean feel" — what does it feel like? look like? after use?
+  3. NEVER make medical or antibacterial claims — cleanliness is experiential, not clinical.
+  4. Format rules:
+     - caption: 50–100 Thai chars
+     - post: 100–200 Thai chars
+     - script-outline: 5 scene bullets with visual direction
+     - lifestyle-story: 150–250 chars narrative post (Facebook)
+  5. Verify every word against claim safety rules.
+
+  Return the JSON output now.
+
+output_format: json
+output_schema:
+  type: object
+  required: [content_pieces, hashtags, compliance_check]
+  properties:
+    content_pieces:
+      type: array
+      items:
+        type: object
+        required: [variant, format, channel, body]
+        properties:
+          variant: { type: integer }
+          format: { type: string }
+          channel: { type: string }
+          body: { type: string }
+          character_count: { type: integer }
+          image_direction: { type: string }
+    hashtags:
+      type: array
+      items: { type: string }
+    compliance_check:
+      type: object
+      required: [approved_claims_used, prohibited_terms_detected, is_safe]
+      properties:
+        approved_claims_used: { type: array, items: { type: string } }
+        prohibited_terms_detected: { type: array, items: { type: string } }
+        is_safe: { type: boolean }
+
+example_input:
+  use_case: "เช้าๆ ที่บ้าน (morning routine)"
+  target_channel: "Facebook"
+  format: "post"
+  content_count: 2
+
+example_output:
+  content_pieces:
+    - variant: 1
+      format: "post"
+      channel: "Facebook"
+      body: |
+        เริ่มวันใหม่ด้วยความสดชื่น 🌿
+
+        SoClean ทิชชู่ 2 ชั้น ให้สัมผัสสะอาดทุกครั้งที่หยิบใช้
+        เหมาะสำหรับหน้า มือ และการดูแลตัวเองทุกวัน
+
+        สั่งได้เลยที่ Shopee / Lazada ✅
+      character_count: 162
+      image_direction: "Morning scene — person at bathroom mirror, SoClean tissue on side table, warm natural light, uncluttered background"
+    - variant: 2
+      format: "post"
+      channel: "Facebook"
+      body: |
+        เช้านี้เริ่มต้นดีๆ กับ SoClean
+
+        ทิชชู่เนียนนุ่ม ให้สัมผัสสะอาดเหมาะสำหรับการดูแลตัวเองทุกเช้า
+        ใช้ได้ทั้งบ้านและออฟฟิศ 🏠
+      character_count: 122
+      image_direction: "Flat lay — SoClean box, morning coffee, notebook; clean desk aesthetic"
+  hashtags:
+    - "#SoClean"
+    - "#ทิชชู่SoClean"
+    - "#BNPaper"
+    - "#ทิชชู่หน้า"
+    - "#ของใช้ในบ้าน"
+    - "#มอร์นิ่งรูทีน"
+  compliance_check:
+    approved_claims_used:
+      - "ให้สัมผัสสะอาด"
+      - "เนียนนุ่ม"
+      - "เหมาะสำหรับการดูแลตัวเองทุกวัน"
+    prohibited_terms_detected: []
+    is_safe: true
