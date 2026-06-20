@@ -1,4 +1,6 @@
 import type {
+  AgentWorkflow,
+  AgentStepResult,
   ApiResponse,
   BrandProfile,
   BrandProfileRequest,
@@ -86,4 +88,20 @@ export const contentApi = {
     apiFetch<GeneratedContent>(`/content/${id}/reject`, { method: "PUT" }),
   delete: (id: string) =>
     apiFetch<void>(`/content/${id}`, { method: "DELETE" }),
+};
+
+// Agent Workflows
+export const workflowApi = {
+  start: (campaignId: string) =>
+    apiFetch<AgentWorkflow>(`/campaigns/${campaignId}/agent-workflows`, { method: "POST" }),
+  listByCampaign: (campaignId: string) =>
+    apiFetch<AgentWorkflow[]>(`/campaigns/${campaignId}/agent-workflows`),
+  get: (workflowId: string) =>
+    apiFetch<AgentWorkflow>(`/agent-workflows/${workflowId}`),
+  getSteps: (workflowId: string) =>
+    apiFetch<AgentStepResult[]>(`/agent-workflows/${workflowId}/steps`),
+  retry: (workflowId: string) =>
+    apiFetch<AgentWorkflow>(`/agent-workflows/${workflowId}/retry`, { method: "POST" }),
+  cancel: (workflowId: string) =>
+    apiFetch<AgentWorkflow>(`/agent-workflows/${workflowId}/cancel`, { method: "POST" }),
 };

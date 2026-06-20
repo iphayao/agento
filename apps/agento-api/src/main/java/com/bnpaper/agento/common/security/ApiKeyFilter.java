@@ -29,6 +29,11 @@ public class ApiKeyFilter extends OncePerRequestFilter {
     @Value("${agento.security.api-key:}")
     private String configuredApiKey;
 
+    /** Returns the configured API key so internal services can embed it in callback headers. */
+    public String getConfiguredKey() {
+        return configuredApiKey != null ? configuredApiKey : "";
+    }
+
     @PostConstruct
     public void warnIfKeyNotConfigured() {
         if (configuredApiKey == null || configuredApiKey.isBlank()) {

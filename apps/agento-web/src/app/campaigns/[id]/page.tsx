@@ -2,10 +2,19 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
-import { campaignApi, contentApi } from "@/lib/api";
-import type { Campaign, ContentStatus, GeneratedContent } from "@/types";
-import { CONTENT_TYPES } from "@/types";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { campaignApi, contentApi, workflowApi } from "@/lib/api";
+import type {
+  AgentStepStatus,
+  AgentWorkflow,
+  AgentWorkflowStatus,
+  Campaign,
+  ContentStatus,
+  GeneratedContent,
+} from "@/types";
+import { AGENT_STEP_LABELS, AGENT_STEPS, CONTENT_TYPES } from "@/types";
+
+// ─── Status helpers ────────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: ContentStatus }) {
   if (status === "APPROVED") return <span className="badge-approved">Approved</span>;
@@ -28,6 +37,345 @@ function ComplianceNote({ notes }: { notes?: string }) {
     </div>
   );
 }
+
+function WorkflowStatusBadge({ status }: { status: AgentWorkflowStatus }) {
+  const map: Record<AgentWorkflowStatus, string> = {
+    PENDING: "bg-gray-100 text-gray-600",
+    RUNNING: "bg-blue-100 text-blue-700",
+    COMPLETED: "bg-green-100 text-green-700",
+    FAILED: "bg-red-100 text-red-700",
+    CANCELLED: "bg-orange-100 text-orange-700",
+  };
+  return (
+    <span className={`text-xs font-semibold px-2 py-0.5 rounded ${map[status]}`}>
+      {status}
+    </span>
+  );
+}
+
+function StepStatusIcon({ status }: { status: AgentStepStatus }) {
+  if (status === "COMPLETED") return <span className="text-green-500">✓</span>;
+  if (status === "FAILED") return <span className="text-red-500">✗</span>;
+  if (status === "RUNNING") return <span className="animate-spin inline-block">⏳</span>;
+  if (status === "SKIPPED") return <span className="text-gray-400">—</span>;
+  return <span className="text-gray-300">○</span>;
+}
+
+// ─── Agent Workflow Panel ─────────────────────────────────────────────────────
+
+function AgentWorkflowPanel({ campaignId, onContentCreated }: {
+  campaignId: string;
+  onContentCreated: () => void;
+}) {
+  const [workflows, setWorkflows] = useState<AgentWorkflow[]>([]);
+  const [running, setRunning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const res = await workflowApi.listByCampaign(campaignId);
+      setWorkflows(res.data);
+    } catch {
+      // silently ignore — campaign page handles main errors
+    }
+  }, [campaignId]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  // Poll active workflows until they complete or fail
+  useEffect(() => {
+    const hasActive = workflows.some(
+      (w) => w.status === "PENDING" || w.status === "RUNNING"
+    );
+    if (hasActive && !pollRef.current) {
+      pollRef.current = setInterval(async () => {
+        await load();
+        const activeIds = workflows
+          .filter((w) => w.status === "PENDING" || w.status === "RUNNING")
+          .map((w) => w.id);
+        if (activeIds.length === 0 && pollRef.current) {
+          clearInterval(pollRef.current);
+          pollRef.current = null;
+          onContentCreated(); // refresh content list when workflow completes
+        }
+      }, 3000);
+    }
+    if (!hasActive && pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [workflows, load, onContentCreated]);
+
+  const handleStart = async () => {
+    setRunning(true);
+    setError(null);
+    try {
+      const res = await workflowApi.start(campaignId);
+      setWorkflows((prev) => [res.data, ...prev]);
+      setExpandedId(res.data.id);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to start workflow");
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  const handleRetry = async (workflowId: string) => {
+    try {
+      const res = await workflowApi.retry(workflowId);
+      setWorkflows((prev) =>
+        prev.map((w) => (w.id === workflowId ? res.data : w))
+      );
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : "Retry failed");
+    }
+  };
+
+  const handleCancel = async (workflowId: string) => {
+    if (!confirm("Cancel this workflow?")) return;
+    try {
+      const res = await workflowApi.cancel(workflowId);
+      setWorkflows((prev) =>
+        prev.map((w) => (w.id === workflowId ? res.data : w))
+      );
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : "Cancel failed");
+    }
+  };
+
+  return (
+    <div className="card mb-8 border-indigo-200 bg-indigo-50">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-indigo-900">Agent Workflow (Phase 2)</h2>
+        <button
+          onClick={handleStart}
+          disabled={running}
+          className="btn-primary bg-indigo-600 hover:bg-indigo-700"
+        >
+          {running ? (
+            <span className="flex items-center gap-2">
+              <span className="animate-spin">⏳</span> Starting…
+            </span>
+          ) : (
+            "Run Agent Workflow"
+          )}
+        </button>
+      </div>
+
+      {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
+
+      {workflows.length === 0 && (
+        <p className="text-sm text-indigo-600">
+          No workflows yet. Click "Run Agent Workflow" to start a 6-step AI content generation.
+        </p>
+      )}
+
+      <div className="space-y-4">
+        {workflows.map((wf) => (
+          <WorkflowCard
+            key={wf.id}
+            workflow={wf}
+            expanded={expandedId === wf.id}
+            onToggle={() => setExpandedId(expandedId === wf.id ? null : wf.id)}
+            onRetry={() => handleRetry(wf.id)}
+            onCancel={() => handleCancel(wf.id)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function WorkflowCard({
+  workflow,
+  expanded,
+  onToggle,
+  onRetry,
+  onCancel,
+}: {
+  workflow: AgentWorkflow;
+  expanded: boolean;
+  onToggle: () => void;
+  onRetry: () => void;
+  onCancel: () => void;
+}) {
+  const stepMap = Object.fromEntries(
+    (workflow.steps || []).map((s) => [s.stepName, s])
+  );
+
+  return (
+    <div className="bg-white rounded-lg border border-indigo-200 overflow-hidden">
+      {/* Header row */}
+      <button
+        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-indigo-50"
+        onClick={onToggle}
+      >
+        <div className="flex items-center gap-3">
+          <WorkflowStatusBadge status={workflow.status} />
+          <span className="text-xs text-gray-500">
+            {new Date(workflow.createdAt).toLocaleString()}
+          </span>
+          {workflow.currentStep && workflow.status === "RUNNING" && (
+            <span className="text-xs text-indigo-600 animate-pulse">
+              → {AGENT_STEP_LABELS[workflow.currentStep] ?? workflow.currentStep}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {workflow.status === "FAILED" && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onRetry(); }}
+              className="btn-secondary btn-sm text-xs"
+            >
+              Retry
+            </button>
+          )}
+          {(workflow.status === "PENDING" || workflow.status === "RUNNING") && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onCancel(); }}
+              className="btn-danger btn-sm text-xs"
+            >
+              Cancel
+            </button>
+          )}
+          <span className="text-gray-400">{expanded ? "▲" : "▼"}</span>
+        </div>
+      </button>
+
+      {/* Error message */}
+      {workflow.errorMessage && (
+        <div className="px-4 py-2 bg-red-50 text-red-700 text-xs border-t border-red-200">
+          {workflow.errorMessage}
+        </div>
+      )}
+
+      {/* Expanded: step timeline */}
+      {expanded && (
+        <div className="px-4 py-3 border-t border-indigo-100">
+          <div className="space-y-2">
+            {AGENT_STEPS.map((stepKey) => {
+              const step = stepMap[stepKey];
+              const status: AgentStepStatus = step?.status ?? "PENDING";
+              return (
+                <StepRow
+                  key={stepKey}
+                  stepKey={stepKey}
+                  status={status}
+                  output={step?.outputPayload}
+                  error={step?.errorMessage}
+                  completedAt={step?.completedAt}
+                />
+              );
+            })}
+          </div>
+
+          {/* Compliance warnings */}
+          {workflow.generatedContent?.complianceWarnings?.length ? (
+            <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
+              <strong>Compliance warnings:</strong>{" "}
+              {workflow.generatedContent.complianceWarnings.join(", ")}
+            </div>
+          ) : workflow.status === "COMPLETED" ? (
+            <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded text-xs text-green-700">
+              Claim-safe — no prohibited terms detected
+            </div>
+          ) : null}
+
+          {workflow.status === "COMPLETED" && (
+            <p className="mt-3 text-xs text-indigo-700">
+              Content saved as DRAFT. See the Generated Content section below to review and approve.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StepRow({
+  stepKey,
+  status,
+  output,
+  error,
+  completedAt,
+}: {
+  stepKey: string;
+  status: AgentStepStatus;
+  output?: string;
+  error?: string;
+  completedAt?: string;
+}) {
+  const [showOutput, setShowOutput] = useState(false);
+  const label = AGENT_STEP_LABELS[stepKey] ?? stepKey;
+
+  let parsedOutput: Record<string, unknown> | null = null;
+  if (output) {
+    try {
+      parsedOutput = JSON.parse(output);
+    } catch {
+      parsedOutput = null;
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      <button
+        className="flex items-center gap-2 text-sm text-left w-full hover:bg-gray-50 rounded px-1 py-0.5"
+        onClick={() => output && setShowOutput(!showOutput)}
+        disabled={!output}
+      >
+        <StepStatusIcon status={status} />
+        <span
+          className={
+            status === "COMPLETED"
+              ? "text-gray-800"
+              : status === "RUNNING"
+              ? "text-blue-700 font-medium"
+              : status === "FAILED"
+              ? "text-red-700"
+              : "text-gray-400"
+          }
+        >
+          {label}
+        </span>
+        {completedAt && (
+          <span className="text-xs text-gray-400 ml-auto">
+            {new Date(completedAt).toLocaleTimeString()}
+          </span>
+        )}
+        {output && (
+          <span className="text-xs text-indigo-500 ml-1">{showOutput ? "▲" : "▼"}</span>
+        )}
+      </button>
+
+      {error && (
+        <p className="text-xs text-red-600 ml-6 mt-0.5">{error}</p>
+      )}
+
+      {showOutput && parsedOutput && (
+        <div className="ml-6 mt-1 text-xs bg-gray-50 border border-gray-200 rounded p-2 space-y-1">
+          {Object.entries(parsedOutput).map(([k, v]) => (
+            <div key={k}>
+              <span className="font-medium text-gray-600">{k}:</span>{" "}
+              <span className="text-gray-700 whitespace-pre-wrap">
+                {typeof v === "string" ? v : JSON.stringify(v, null, 2)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function CampaignDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -166,9 +514,12 @@ export default function CampaignDetailPage() {
         </div>
       </div>
 
-      {/* Generate Content */}
+      {/* Agent Workflow Panel (Phase 2) */}
+      <AgentWorkflowPanel campaignId={id} onContentCreated={loadContent} />
+
+      {/* Quick Generate (Phase 1) */}
       <div className="card mb-8 border-blue-200 bg-blue-50">
-        <h2 className="text-lg font-semibold text-blue-900 mb-4">Generate Content</h2>
+        <h2 className="text-lg font-semibold text-blue-900 mb-4">Quick Generate (Single Step)</h2>
         <div className="flex flex-wrap gap-3 items-end">
           <div>
             <label className="form-label text-blue-800">Content Type</label>
@@ -222,7 +573,7 @@ export default function CampaignDetailPage() {
 
         {contentList.length === 0 && (
           <div className="card text-center py-8">
-            <p className="text-gray-400">No content generated yet. Click Generate Content above.</p>
+            <p className="text-gray-400">No content generated yet.</p>
           </div>
         )}
 

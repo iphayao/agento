@@ -51,6 +51,8 @@ public class GeneratedContent {
     @Builder.Default
     private ContentStatus status = ContentStatus.DRAFT;
 
+    private UUID workflowId;
+
     private String aiModel;
 
     private String promptVersion;
