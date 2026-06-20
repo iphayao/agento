@@ -8,6 +8,10 @@ class Settings(BaseSettings):
     agento_api_url: str = "http://localhost:8080/api"
     agento_api_key: str = ""
 
+    # Inbound security — set WORKER_API_KEY to restrict callers (Spring Boot sends this)
+    # Leave empty to disable authentication (dev/test mode only)
+    worker_api_key: str = ""
+
     # AI provider
     ai_provider: str = "openai"
     ai_api_key: str = ""

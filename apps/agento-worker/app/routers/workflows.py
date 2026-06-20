@@ -1,12 +1,13 @@
 """FastAPI router for workflow endpoints."""
 
-import asyncio
 import logging
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends
 
+from app import cancellation
 from app.callback import notify_complete, notify_fail
 from app.models import FinalContent, WorkflowRequest, WorkflowResponse
+from app.security import require_api_key
 from app.workflow.graph import workflow_graph
 from app.workflow.state import WorkflowState
 
@@ -15,7 +16,12 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/workflows", tags=["workflows"])
 
 
-@router.post("/content-generation", response_model=WorkflowResponse, status_code=202)
+@router.post(
+    "/content-generation",
+    response_model=WorkflowResponse,
+    status_code=202,
+    dependencies=[Depends(require_api_key)],
+)
 async def start_content_generation(
     request: WorkflowRequest,
     background_tasks: BackgroundTasks,
@@ -30,6 +36,21 @@ async def start_content_generation(
         workflowId=request.workflowId,
         message="Workflow accepted and queued for execution",
     )
+
+
+@router.post(
+    "/{workflow_id}/cancel",
+    dependencies=[Depends(require_api_key)],
+)
+async def cancel_workflow(workflow_id: str) -> dict:
+    """Signal the worker to stop executing a workflow.
+
+    The worker checks this flag at the start of each agent node.
+    Any already-running LLM call will complete, but no new steps will start.
+    """
+    cancellation.cancel(workflow_id)
+    logger.info("Cancellation requested for workflow %s", workflow_id)
+    return {"workflowId": workflow_id, "status": "cancel_requested"}
 
 
 async def _run_workflow(request: WorkflowRequest) -> None:
@@ -61,8 +82,9 @@ async def _run_workflow(request: WorkflowRequest) -> None:
         "current_step": None,
     }
 
+    final_state: WorkflowState | None = None
     try:
-        final_state: WorkflowState = await workflow_graph.ainvoke(initial_state)
+        final_state = await workflow_graph.ainvoke(initial_state)
 
         final_output = final_state.get("final_output")
         if not final_output or not final_output.get("body"):
@@ -82,6 +104,10 @@ async def _run_workflow(request: WorkflowRequest) -> None:
         logger.info("Workflow %s completed successfully", wf_id)
 
     except Exception as exc:
-        current_step = initial_state.get("current_step")
+        # Use final_state.current_step if available — it reflects the actual last step
+        current_step = final_state.get("current_step") if final_state else None
         logger.error("Workflow %s failed: %s", wf_id, exc, exc_info=True)
         await notify_fail(base_url, api_key, wf_id, str(exc), current_step)
+
+    finally:
+        cancellation.cleanup(wf_id)

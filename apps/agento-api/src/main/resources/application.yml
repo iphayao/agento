@@ -29,6 +29,7 @@ agento:
     api-key: ${AGENTO_API_KEY:}
   worker:
     base-url: ${WORKER_URL:http://localhost:8001}
+    api-key: ${WORKER_API_KEY:}
     connect-timeout-seconds: ${WORKER_CONNECT_TIMEOUT:5}
     read-timeout-seconds: ${WORKER_READ_TIMEOUT:120}
     callback-base-url: ${API_CALLBACK_URL:http://localhost:8080/api}

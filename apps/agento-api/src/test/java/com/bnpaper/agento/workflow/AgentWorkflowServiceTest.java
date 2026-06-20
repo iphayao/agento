@@ -5,7 +5,8 @@ import com.bnpaper.agento.brand.BrandProfileRepository;
 import com.bnpaper.agento.campaign.Campaign;
 import com.bnpaper.agento.campaign.CampaignRepository;
 import com.bnpaper.agento.common.exception.ResourceNotFoundException;
-import com.bnpaper.agento.common.security.ApiKeyFilter;
+import com.bnpaper.agento.content.ContentStatus;
+import com.bnpaper.agento.content.GeneratedContent;
 import com.bnpaper.agento.content.GeneratedContentRepository;
 import com.bnpaper.agento.product.ProductFactRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,6 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -36,7 +38,6 @@ class AgentWorkflowServiceTest {
     @Mock private GeneratedContentRepository contentRepo;
     @Mock private WorkerClient workerClient;
     @Mock private WorkerProperties workerProperties;
-    @Mock private ApiKeyFilter apiKeyFilter;
     @Spy  private ObjectMapper objectMapper;
 
     @InjectMocks
@@ -48,6 +49,9 @@ class AgentWorkflowServiceTest {
 
     @BeforeEach
     void setUp() {
+        // Inject the API key value that @Value would normally provide
+        ReflectionTestUtils.setField(service, "configuredApiKey", "test-key");
+
         campaignId = UUID.randomUUID();
         campaign = Campaign.builder()
                 .id(campaignId)
@@ -73,7 +77,6 @@ class AgentWorkflowServiceTest {
         when(brandRepo.findAll()).thenReturn(List.of(brand));
         when(productRepo.findAll()).thenReturn(List.of());
         when(workerProperties.getCallbackBaseUrl()).thenReturn("http://localhost:8080/api");
-        when(apiKeyFilter.getConfiguredKey()).thenReturn("test-key");
 
         AgentWorkflow saved = AgentWorkflow.builder()
                 .id(UUID.randomUUID())
@@ -99,7 +102,6 @@ class AgentWorkflowServiceTest {
         when(brandRepo.findAll()).thenReturn(List.of(brand));
         when(productRepo.findAll()).thenReturn(List.of());
         when(workerProperties.getCallbackBaseUrl()).thenReturn("http://localhost:8080/api");
-        when(apiKeyFilter.getConfiguredKey()).thenReturn("");
 
         AgentWorkflow failedWorkflow = AgentWorkflow.builder()
                 .id(UUID.randomUUID())
@@ -147,6 +149,57 @@ class AgentWorkflowServiceTest {
     }
 
     @Test
+    void findById_populatesGeneratedContentWhenContentExists() throws Exception {
+        UUID wfId = UUID.randomUUID();
+        String outputPayload = objectMapper.writeValueAsString(
+                java.util.Map.of("contentId", UUID.randomUUID().toString(),
+                        "complianceWarnings", List.of()));
+
+        AgentWorkflow workflow = AgentWorkflow.builder()
+                .id(wfId).campaignId(campaignId)
+                .status(AgentWorkflowStatus.COMPLETED)
+                .outputPayload(outputPayload)
+                .build();
+
+        GeneratedContent content = GeneratedContent.builder()
+                .id(UUID.randomUUID())
+                .campaignId(campaignId)
+                .workflowId(wfId)
+                .title("Test Title")
+                .body("Test body text")
+                .status(ContentStatus.DRAFT)
+                .build();
+
+        when(workflowRepo.findById(wfId)).thenReturn(Optional.of(workflow));
+        when(stepRepo.findByWorkflowIdOrderByStartedAtAsc(wfId)).thenReturn(List.of());
+        when(contentRepo.findFirstByWorkflowIdOrderByCreatedAtDesc(wfId)).thenReturn(Optional.of(content));
+
+        AgentWorkflowDto.Response result = service.findById(wfId);
+
+        assertThat(result.getGeneratedContent()).isNotNull();
+        assertThat(result.getGeneratedContent().getTitle()).isEqualTo("Test Title");
+        assertThat(result.getGeneratedContent().getStatus()).isEqualTo("DRAFT");
+        assertThat(result.getGeneratedContent().getComplianceWarnings()).isEmpty();
+    }
+
+    @Test
+    void findById_generatedContentIsNullWhenNoContentExists() {
+        UUID wfId = UUID.randomUUID();
+        AgentWorkflow workflow = AgentWorkflow.builder()
+                .id(wfId).campaignId(campaignId)
+                .status(AgentWorkflowStatus.RUNNING)
+                .build();
+
+        when(workflowRepo.findById(wfId)).thenReturn(Optional.of(workflow));
+        when(stepRepo.findByWorkflowIdOrderByStartedAtAsc(wfId)).thenReturn(List.of());
+        when(contentRepo.findFirstByWorkflowIdOrderByCreatedAtDesc(wfId)).thenReturn(Optional.empty());
+
+        AgentWorkflowDto.Response result = service.findById(wfId);
+
+        assertThat(result.getGeneratedContent()).isNull();
+    }
+
+    @Test
     void cancel_setsStatusCancelled() {
         UUID id = UUID.randomUUID();
         AgentWorkflow running = AgentWorkflow.builder()
@@ -167,6 +220,7 @@ class AgentWorkflowServiceTest {
         AgentWorkflowDto.Response result = service.cancel(id);
 
         assertThat(result.getStatus()).isEqualTo(AgentWorkflowStatus.CANCELLED);
+        verify(workerClient).cancelWorkflow(id);
     }
 
     @Test
@@ -219,6 +273,88 @@ class AgentWorkflowServiceTest {
         verify(stepRepo).save(argThat(step ->
                 step.getStepName().equals("brand_strategist")
                         && step.getStatus() == AgentStepStatus.RUNNING));
+    }
+
+    @Test
+    void handleComplete_savesGeneratedContentAsDraft() {
+        UUID wfId = UUID.randomUUID();
+        AgentWorkflow workflow = AgentWorkflow.builder()
+                .id(wfId).campaignId(campaignId)
+                .status(AgentWorkflowStatus.RUNNING).build();
+
+        when(workflowRepo.findById(wfId)).thenReturn(Optional.of(workflow));
+        when(contentRepo.save(any())).thenAnswer(inv -> {
+            GeneratedContent c = inv.getArgument(0);
+            // Simulate DB assigning an ID
+            GeneratedContent saved = GeneratedContent.builder()
+                    .id(UUID.randomUUID())
+                    .campaignId(c.getCampaignId())
+                    .workflowId(c.getWorkflowId())
+                    .contentType(c.getContentType())
+                    .title(c.getTitle())
+                    .hook(c.getHook())
+                    .body(c.getBody())
+                    .callToAction(c.getCallToAction())
+                    .hashtags(c.getHashtags())
+                    .status(c.getStatus())
+                    .aiModel(c.getAiModel())
+                    .promptVersion(c.getPromptVersion())
+                    .complianceNotes(c.getComplianceNotes())
+                    .build();
+            return saved;
+        });
+        when(workflowRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        AgentWorkflowDto.CompleteCallbackRequest req = new AgentWorkflowDto.CompleteCallbackRequest();
+        req.setFinalContent(new AgentWorkflowDto.CompleteCallbackRequest.FinalContent(
+                "Title", "Hook ภาษาไทย", "Body ภาษาไทย", "CTA",
+                List.of("#SoClean", "#ทิชชู่SoClean"), "Claim-safe"));
+        req.setComplianceWarnings(List.of());
+
+        service.handleComplete(wfId, req);
+
+        verify(contentRepo).save(argThat(c ->
+                c.getStatus() == ContentStatus.DRAFT
+                        && "AGENT_WORKFLOW".equals(c.getContentType())
+                        && "Body ภาษาไทย".equals(c.getBody())
+                        && "Hook ภาษาไทย".equals(c.getHook())
+                        && "v2".equals(c.getPromptVersion())
+                        && wfId.equals(c.getWorkflowId())));
+
+        verify(workflowRepo).save(argThat(w ->
+                w.getStatus() == AgentWorkflowStatus.COMPLETED
+                        && w.getCurrentStep() == null
+                        && w.getOutputPayload() != null));
+    }
+
+    @Test
+    void handleComplete_setsComplianceWarningWhenTermsDetected() {
+        UUID wfId = UUID.randomUUID();
+        AgentWorkflow workflow = AgentWorkflow.builder()
+                .id(wfId).campaignId(campaignId)
+                .status(AgentWorkflowStatus.RUNNING).build();
+
+        when(workflowRepo.findById(wfId)).thenReturn(Optional.of(workflow));
+        when(contentRepo.save(any())).thenAnswer(inv -> {
+            GeneratedContent c = inv.getArgument(0);
+            return GeneratedContent.builder().id(UUID.randomUUID())
+                    .campaignId(c.getCampaignId()).workflowId(c.getWorkflowId())
+                    .status(c.getStatus()).complianceNotes(c.getComplianceNotes())
+                    .hashtags(List.of()).build();
+        });
+        when(workflowRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        AgentWorkflowDto.CompleteCallbackRequest req = new AgentWorkflowDto.CompleteCallbackRequest();
+        req.setFinalContent(new AgentWorkflowDto.CompleteCallbackRequest.FinalContent(
+                "Title", "Hook", "Body", "CTA", List.of("#SoClean"), null));
+        req.setComplianceWarnings(List.of("dust-free"));
+
+        service.handleComplete(wfId, req);
+
+        verify(contentRepo).save(argThat(c ->
+                c.getComplianceNotes() != null
+                        && c.getComplianceNotes().contains("WARNING")
+                        && c.getComplianceNotes().contains("dust-free")));
     }
 
     @Test

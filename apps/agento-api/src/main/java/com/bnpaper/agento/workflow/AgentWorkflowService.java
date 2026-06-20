@@ -5,16 +5,19 @@ import com.bnpaper.agento.brand.BrandProfileRepository;
 import com.bnpaper.agento.campaign.Campaign;
 import com.bnpaper.agento.campaign.CampaignRepository;
 import com.bnpaper.agento.common.exception.ResourceNotFoundException;
-import com.bnpaper.agento.common.security.ApiKeyFilter;
 import com.bnpaper.agento.content.ContentStatus;
 import com.bnpaper.agento.content.GeneratedContent;
 import com.bnpaper.agento.content.GeneratedContentRepository;
 import com.bnpaper.agento.product.ProductFact;
 import com.bnpaper.agento.product.ProductFactRepository;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,8 +41,10 @@ public class AgentWorkflowService {
     private final GeneratedContentRepository contentRepo;
     private final WorkerClient workerClient;
     private final WorkerProperties workerProperties;
-    private final ApiKeyFilter apiKeyFilter;
     private final ObjectMapper objectMapper;
+
+    @Value("${agento.security.api-key:}")
+    private String configuredApiKey;
 
     /** Creates a workflow record and dispatches it to agento-worker. */
     @Transactional
@@ -66,7 +71,7 @@ public class AgentWorkflowService {
                 .workflowId(workflow.getId().toString())
                 .campaignId(campaignId.toString())
                 .callbackBaseUrl(workerProperties.getCallbackBaseUrl())
-                .callbackApiKey(apiKeyFilter.getConfiguredKey())
+                .callbackApiKey(configuredApiKey)
                 .brand(brandToMap(brand))
                 .products(productsToList(products))
                 .campaign(campaignToMap(campaign))
@@ -91,7 +96,9 @@ public class AgentWorkflowService {
         return workflowRepo.findByCampaignIdOrderByCreatedAtDesc(campaignId).stream()
                 .map(w -> {
                     List<AgentStepResult> steps = stepRepo.findByWorkflowIdOrderByStartedAtAsc(w.getId());
-                    return AgentWorkflowDto.toResponse(w, steps);
+                    AgentWorkflowDto.Response response = AgentWorkflowDto.toResponse(w, steps);
+                    populateGeneratedContent(response, w);
+                    return response;
                 })
                 .toList();
     }
@@ -100,7 +107,9 @@ public class AgentWorkflowService {
         AgentWorkflow workflow = workflowRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("AgentWorkflow", id));
         List<AgentStepResult> steps = stepRepo.findByWorkflowIdOrderByStartedAtAsc(id);
-        return AgentWorkflowDto.toResponse(workflow, steps);
+        AgentWorkflowDto.Response response = AgentWorkflowDto.toResponse(workflow, steps);
+        populateGeneratedContent(response, workflow);
+        return response;
     }
 
     public List<AgentWorkflowDto.StepResultResponse> findSteps(UUID workflowId) {
@@ -157,6 +166,10 @@ public class AgentWorkflowService {
 
         workflow.setStatus(AgentWorkflowStatus.CANCELLED);
         workflow = workflowRepo.save(workflow);
+
+        // Best-effort: signal Python worker to stop executing remaining steps
+        workerClient.cancelWorkflow(id);
+
         List<AgentStepResult> steps = stepRepo.findByWorkflowIdOrderByStartedAtAsc(id);
         return AgentWorkflowDto.toResponse(workflow, steps);
     }
@@ -278,6 +291,37 @@ public class AgentWorkflowService {
 
     // --- Helpers ---
 
+    /** Populate the generatedContent summary on a response if this workflow produced content. */
+    private void populateGeneratedContent(AgentWorkflowDto.Response response, AgentWorkflow workflow) {
+        contentRepo.findFirstByWorkflowIdOrderByCreatedAtDesc(workflow.getId()).ifPresent(content -> {
+            List<String> warnings = parseComplianceWarnings(workflow.getOutputPayload());
+            response.setGeneratedContent(new AgentWorkflowDto.GeneratedContentSummary(
+                    content.getId(),
+                    content.getTitle(),
+                    content.getStatus().name(),
+                    warnings
+            ));
+        });
+    }
+
+    /** Extract complianceWarnings list from the workflow's JSON output payload. */
+    private List<String> parseComplianceWarnings(String outputPayload) {
+        if (outputPayload == null || outputPayload.isBlank()) return List.of();
+        try {
+            Map<String, Object> map = objectMapper.readValue(outputPayload, new TypeReference<>() {});
+            Object warnings = map.get("complianceWarnings");
+            if (warnings instanceof List<?> list) {
+                return list.stream()
+                        .filter(String.class::isInstance)
+                        .map(String.class::cast)
+                        .toList();
+            }
+        } catch (JsonProcessingException e) {
+            log.debug("Could not parse compliance warnings from output payload: {}", e.getMessage());
+        }
+        return List.of();
+    }
+
     private String buildInputJson(Campaign c, BrandProfile b, List<ProductFact> products) {
         try {
             Map<String, Object> payload = Map.of(
@@ -291,19 +335,19 @@ public class AgentWorkflowService {
         }
     }
 
-    @SuppressWarnings("unchecked")
+    /** Rebuild a dispatch request from the stored input payload for workflow retry. */
     private AgentWorkflowDto.DispatchRequest buildDispatchFromStoredPayload(AgentWorkflow workflow) {
         try {
-            Map<String, Object> payload = objectMapper.readValue(
-                    workflow.getInputPayload(), Map.class);
+            StoredInputPayload payload = objectMapper.readValue(
+                    workflow.getInputPayload(), StoredInputPayload.class);
             return AgentWorkflowDto.DispatchRequest.builder()
                     .workflowId(workflow.getId().toString())
                     .campaignId(workflow.getCampaignId().toString())
                     .callbackBaseUrl(workerProperties.getCallbackBaseUrl())
-                    .callbackApiKey(apiKeyFilter.getConfiguredKey())
-                    .brand(payload.get("brand"))
-                    .products((List<Object>) payload.get("products"))
-                    .campaign(payload.get("campaign"))
+                    .callbackApiKey(configuredApiKey)
+                    .brand(payload.getBrand() != null ? payload.getBrand() : Map.of())
+                    .products(payload.getProducts() != null ? payload.getProducts() : List.of())
+                    .campaign(payload.getCampaign() != null ? payload.getCampaign() : Map.of())
                     .build();
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Could not parse stored input payload for retry", e);
@@ -351,5 +395,14 @@ public class AgentWorkflowService {
 
     private String nullToEmpty(String s) {
         return s != null ? s : "";
+    }
+
+    /** Typed container for deserializing the stored workflow input payload on retry. */
+    @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class StoredInputPayload {
+        private Map<String, Object> brand;
+        private List<Object> products;
+        private Map<String, Object> campaign;
     }
 }

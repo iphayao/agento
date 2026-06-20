@@ -10,7 +10,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
 import java.net.URI;
-import java.time.Duration;
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -24,9 +24,8 @@ public class WorkerClient {
      * starts background execution, and calls back to Spring Boot as each step completes.
      */
     public void dispatch(AgentWorkflowDto.DispatchRequest request) {
-        RestClient client = buildClient();
         try {
-            DispatchResponse response = client.post()
+            DispatchResponse response = buildClient().post()
                     .uri(URI.create(properties.getBaseUrl() + "/workflows/content-generation"))
                     .body(request)
                     .retrieve()
@@ -39,13 +38,31 @@ public class WorkerClient {
         }
     }
 
+    /**
+     * Best-effort cancel signal to the worker. If the worker is unreachable the Spring Boot
+     * cancel operation still completes — subsequent callbacks from the worker will be ignored.
+     */
+    public void cancelWorkflow(UUID workflowId) {
+        try {
+            buildClient().post()
+                    .uri(URI.create(properties.getBaseUrl() + "/workflows/" + workflowId + "/cancel"))
+                    .retrieve()
+                    .toBodilessEntity();
+            log.info("Cancel signal sent to worker for workflow {}", workflowId);
+        } catch (RestClientException e) {
+            log.warn("Could not send cancel signal to worker for workflow {} (worker may be down): {}",
+                    workflowId, e.getMessage());
+        }
+    }
+
     private RestClient buildClient() {
-        return RestClient.builder()
-                .defaultHeader("Content-Type", "application/json")
-                .requestInitializer(req -> {
-                    req.getHeaders().set("X-Api-Key", "internal");
-                })
-                .build();
+        RestClient.Builder builder = RestClient.builder()
+                .defaultHeader("Content-Type", "application/json");
+        String apiKey = properties.getApiKey();
+        if (apiKey != null && !apiKey.isBlank()) {
+            builder.defaultHeader("X-Api-Key", apiKey);
+        }
+        return builder.build();
     }
 
     @Data

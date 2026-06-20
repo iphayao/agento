@@ -8,17 +8,18 @@ Set AI_PROVIDER=openai (default) and configure AI_API_KEY.
 Anthropic: set AI_PROVIDER=anthropic, AI_API_KEY=sk-ant-...
 """
 
-import asyncio
 import json
 import logging
 import re
 import unicodedata
 from typing import Any
 
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+import httpx
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
-from app.config import settings
+from app import cancellation
 from app.callback import notify_step
+from app.config import settings
 from app.workflow.state import WorkflowState
 
 logger = logging.getLogger(__name__)
@@ -54,16 +55,16 @@ def find_prohibited_terms(text: str) -> list[str]:
     return found
 
 
-# ─── LLM Provider abstraction ─────────────────────────────────────────────────
+# ─── LLM Provider (singleton — created once at module import) ─────────────────
 
-def _get_llm_client():
-    """Return an LLM client based on AI_PROVIDER config."""
+def _create_llm_client() -> tuple[str, Any]:
+    """Initialize the LLM client from config. Called once at import time."""
     if settings.ai_provider.lower() == "anthropic":
         try:
             import anthropic
             return "anthropic", anthropic.AsyncAnthropic(api_key=settings.ai_api_key)
-        except ImportError:
-            raise ImportError("pip install anthropic to use AI_PROVIDER=anthropic")
+        except ImportError as exc:
+            raise ImportError("pip install anthropic to use AI_PROVIDER=anthropic") from exc
     else:
         from openai import AsyncOpenAI
         return "openai", AsyncOpenAI(
@@ -72,18 +73,19 @@ def _get_llm_client():
         )
 
 
+_LLM_PROVIDER, _LLM_CLIENT = _create_llm_client()
+
+
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=2, max=10),
-    retry=retry_if_exception_type(Exception),
+    retry=retry_if_exception_type((httpx.HTTPError, httpx.TimeoutException, TimeoutError, ConnectionError)),
     reraise=True,
 )
 async def _call_llm(system_prompt: str, user_prompt: str) -> str:
-    """Call the configured LLM with retry. Returns raw string response."""
-    provider_type, client = _get_llm_client()
-
-    if provider_type == "anthropic":
-        message = await client.messages.create(
+    """Call the configured LLM. Retries only on transient network errors."""
+    if _LLM_PROVIDER == "anthropic":
+        message = await _LLM_CLIENT.messages.create(
             model=settings.ai_model,
             max_tokens=settings.ai_max_tokens,
             system=system_prompt,
@@ -92,7 +94,7 @@ async def _call_llm(system_prompt: str, user_prompt: str) -> str:
         return message.content[0].text
 
     # OpenAI-compatible
-    response = await client.chat.completions.create(
+    response = await _LLM_CLIENT.chat.completions.create(
         model=settings.ai_model,
         temperature=settings.ai_temperature,
         max_tokens=settings.ai_max_tokens,
@@ -148,6 +150,22 @@ CRITICAL CLAIM SAFETY RULES (non-negotiable):
 - USE INSTEAD: ฝุ่นน้อย, เนียนนุ่ม, ให้สัมผัสสะอาด, เหมาะกับการใช้งานทุกวัน, คุ้มค่า
 """
 
+# ─── Guard helpers ─────────────────────────────────────────────────────────────
+
+
+async def _should_skip(state: WorkflowState, step: str) -> bool:
+    """Return True if this step should be skipped due to prior errors or cancellation.
+
+    Notifies Spring Boot with SKIPPED status so the UI can reflect it.
+    """
+    wf_id = state["workflow_id"]
+    if state.get("errors") or cancellation.is_cancelled(wf_id):
+        await notify_step(
+            state["callback_base_url"], state["callback_api_key"], wf_id, step, "SKIPPED"
+        )
+        return True
+    return False
+
 
 # ─── Node functions ────────────────────────────────────────────────────────────
 
@@ -157,6 +175,11 @@ async def brand_strategist_node(state: WorkflowState) -> dict:
     wf_id = state["workflow_id"]
     base_url = state["callback_base_url"]
     api_key = state["callback_api_key"]
+
+    # Only check cancellation for the first node (no prior errors possible)
+    if cancellation.is_cancelled(wf_id):
+        await notify_step(base_url, api_key, wf_id, step, "SKIPPED")
+        return {**state, "current_step": step}
 
     await notify_step(base_url, api_key, wf_id, step, "RUNNING")
 
@@ -196,6 +219,9 @@ async def customer_insight_node(state: WorkflowState) -> dict:
     wf_id = state["workflow_id"]
     base_url = state["callback_base_url"]
     api_key = state["callback_api_key"]
+
+    if await _should_skip(state, step):
+        return {**state, "current_step": step}
 
     await notify_step(base_url, api_key, wf_id, step, "RUNNING")
 
@@ -238,6 +264,9 @@ async def content_writer_node(state: WorkflowState) -> dict:
     wf_id = state["workflow_id"]
     base_url = state["callback_base_url"]
     api_key = state["callback_api_key"]
+
+    if await _should_skip(state, step):
+        return {**state, "current_step": step}
 
     await notify_step(base_url, api_key, wf_id, step, "RUNNING")
 
@@ -289,6 +318,9 @@ async def claim_compliance_node(state: WorkflowState) -> dict:
     base_url = state["callback_base_url"]
     api_key = state["callback_api_key"]
 
+    if await _should_skip(state, step):
+        return {**state, "current_step": step}
+
     await notify_step(base_url, api_key, wf_id, step, "RUNNING")
 
     draft = state.get("content_draft") or {}
@@ -333,15 +365,15 @@ Respond ONLY with valid JSON:
             "current_step": step,
         }
     except Exception as exc:
-        # Fallback: use server-side check only
+        # Fallback: use server-side check only — log the LLM failure but don't fail the step
+        logger.warning("LLM compliance check failed, using server-side only: %s", exc)
         compliance_result = {
             "isSafe": len(server_warnings) == 0,
             "warnings": server_warnings,
             "suggestedRevisions": [],
         }
         output = json.dumps(compliance_result)
-        await notify_step(base_url, api_key, wf_id, step, "COMPLETED",
-                          output=output)
+        await notify_step(base_url, api_key, wf_id, step, "COMPLETED", output=output)
         return {
             **state,
             "compliance_result": compliance_result,
@@ -356,6 +388,9 @@ async def editor_node(state: WorkflowState) -> dict:
     wf_id = state["workflow_id"]
     base_url = state["callback_base_url"]
     api_key = state["callback_api_key"]
+
+    if await _should_skip(state, step):
+        return {**state, "current_step": step}
 
     await notify_step(base_url, api_key, wf_id, step, "RUNNING")
 
@@ -393,7 +428,8 @@ Respond ONLY with valid JSON (same schema as input):
                           output=output, input_payload=user)
         return {**state, "edited_content": result, "current_step": step}
     except Exception as exc:
-        # Fallback: use draft as-is
+        # Fallback: use draft as-is — editor failure is non-critical
+        logger.warning("Editor LLM failed, using draft as-is: %s", exc)
         await notify_step(base_url, api_key, wf_id, step, "COMPLETED",
                           output=json.dumps(draft))
         return {**state, "edited_content": draft, "current_step": step}
@@ -405,6 +441,9 @@ async def final_formatter_node(state: WorkflowState) -> dict:
     wf_id = state["workflow_id"]
     base_url = state["callback_base_url"]
     api_key = state["callback_api_key"]
+
+    if await _should_skip(state, step):
+        return {**state, "current_step": step}
 
     await notify_step(base_url, api_key, wf_id, step, "RUNNING")
 

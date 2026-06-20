@@ -72,6 +72,8 @@ function AgentWorkflowPanel({ campaignId, onContentCreated }: {
   const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Tracks whether we were previously polling so we know when to call onContentCreated
+  const wasPollRef = useRef(false);
 
   const load = useCallback(async () => {
     try {
@@ -86,30 +88,34 @@ function AgentWorkflowPanel({ campaignId, onContentCreated }: {
     load();
   }, [load]);
 
-  // Poll active workflows until they complete or fail
+  // Poll active workflows every 3 s until they complete, fail, or are cancelled.
+  // When polling stops (transition from active → not active), refresh the content list.
   useEffect(() => {
     const hasActive = workflows.some(
       (w) => w.status === "PENDING" || w.status === "RUNNING"
     );
+
     if (hasActive && !pollRef.current) {
-      pollRef.current = setInterval(async () => {
-        await load();
-        const activeIds = workflows
-          .filter((w) => w.status === "PENDING" || w.status === "RUNNING")
-          .map((w) => w.id);
-        if (activeIds.length === 0 && pollRef.current) {
-          clearInterval(pollRef.current);
-          pollRef.current = null;
-          onContentCreated(); // refresh content list when workflow completes
-        }
-      }, 3000);
+      pollRef.current = setInterval(load, 3000);
+      wasPollRef.current = true;
     }
+
     if (!hasActive && pollRef.current) {
       clearInterval(pollRef.current);
       pollRef.current = null;
     }
+
+    // Fire onContentCreated once when polling transitions from active → stopped
+    if (!hasActive && wasPollRef.current) {
+      wasPollRef.current = false;
+      onContentCreated();
+    }
+
     return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
     };
   }, [workflows, load, onContentCreated]);
 
