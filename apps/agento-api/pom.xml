@@ -19,6 +19,8 @@
 
     <properties>
         <java.version>21</java.version>
+        <!-- Lombok 1.18.36+ required for JDK 25 compilation support -->
+        <lombok.version>1.18.36</lombok.version>
     </properties>
 
     <dependencies>
