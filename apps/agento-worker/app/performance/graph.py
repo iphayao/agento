@@ -21,14 +21,14 @@ def build_performance_graph():
     builder.add_node("cta_analyzer", cta_analyzer_node)
     builder.add_node("channel_analyzer", channel_analyzer_node)
     builder.add_node("insight_builder", insight_builder_node)
-    builder.add_node("summary", summary_node)
+    builder.add_node("performance_summary", summary_node)
 
     builder.set_entry_point("hook_analyzer")
     builder.add_edge("hook_analyzer", "angle_analyzer")
     builder.add_edge("angle_analyzer", "cta_analyzer")
     builder.add_edge("cta_analyzer", "channel_analyzer")
     builder.add_edge("channel_analyzer", "insight_builder")
-    builder.add_edge("insight_builder", "summary")
-    builder.add_edge("summary", END)
+    builder.add_edge("insight_builder", "performance_summary")
+    builder.add_edge("performance_summary", END)
 
     return builder.compile()
