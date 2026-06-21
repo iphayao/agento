@@ -354,3 +354,92 @@ export const CAMPAIGN_STATUSES = [
   { value: "COMPLETED", label: "Completed" },
   { value: "ARCHIVED", label: "Archived" },
 ];
+
+// ── Content Calendar ────────────────────────────────────────────────────────
+
+export type CalendarStatus = "DRAFT" | "GENERATING" | "READY_FOR_REVIEW" | "APPROVED";
+export type CalendarItemStatus = "PLANNED" | "GENERATING" | "COMPLETED" | "FAILED";
+export type BatchJobStatus = "PENDING" | "RUNNING" | "COMPLETED" | "FAILED";
+
+export interface ContentCalendar {
+  id: string;
+  name: string;
+  periodStart: string;
+  periodEnd: string;
+  objective?: string;
+  status: CalendarStatus;
+  itemCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ContentCalendarRequest {
+  name: string;
+  periodStart: string;
+  periodEnd: string;
+  objective?: string;
+}
+
+export interface ContentCalendarUpdateRequest {
+  name?: string;
+  periodStart?: string;
+  periodEnd?: string;
+  objective?: string;
+  status?: string;
+}
+
+export interface CalendarItem {
+  id: string;
+  calendarId: string;
+  plannedDate: string;
+  channel: string;
+  contentType?: string;
+  contentAngle?: string;
+  targetAudience?: string;
+  hookDirection?: string;
+  ctaDirection?: string;
+  status: CalendarItemStatus;
+  generatedContentId?: string;
+  workflowId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CalendarItemRequest {
+  plannedDate: string;
+  channel: string;
+  contentType?: string;
+  contentAngle?: string;
+  targetAudience?: string;
+  hookDirection?: string;
+  ctaDirection?: string;
+}
+
+export interface CalendarItemUpdateRequest {
+  plannedDate?: string;
+  channel?: string;
+  contentType?: string;
+  contentAngle?: string;
+  targetAudience?: string;
+  hookDirection?: string;
+  ctaDirection?: string;
+}
+
+export interface BatchGenerationJob {
+  id: string;
+  calendarId: string;
+  status: BatchJobStatus;
+  totalItems: number;
+  completedItems: number;
+  failedItems: number;
+  errorMessage?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const CALENDAR_STATUSES: { value: CalendarStatus; label: string }[] = [
+  { value: "DRAFT", label: "Draft" },
+  { value: "GENERATING", label: "Generating" },
+  { value: "READY_FOR_REVIEW", label: "Ready for Review" },
+  { value: "APPROVED", label: "Approved" },
+];

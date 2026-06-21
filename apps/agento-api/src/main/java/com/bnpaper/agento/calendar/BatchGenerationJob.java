@@ -1,4 +1,4 @@
-package com.bnpaper.agento.workflow;
+package com.bnpaper.agento.calendar;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -9,32 +9,32 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "agent_workflows")
+@Table(name = "batch_generation_jobs")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AgentWorkflow {
+public class BatchGenerationJob {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    private UUID campaignId;
-
-    private UUID calendarItemId;
+    @Column(nullable = false)
+    private UUID calendarId;
 
     @Enumerated(EnumType.STRING)
     @Builder.Default
-    private AgentWorkflowStatus status = AgentWorkflowStatus.PENDING;
+    private BatchJobStatus status = BatchJobStatus.PENDING;
 
-    private String currentStep;
+    @Builder.Default
+    private int totalItems = 0;
 
-    @Column(columnDefinition = "text")
-    private String inputPayload;
+    @Builder.Default
+    private int completedItems = 0;
 
-    @Column(columnDefinition = "text")
-    private String outputPayload;
+    @Builder.Default
+    private int failedItems = 0;
 
     @Column(columnDefinition = "text")
     private String errorMessage;

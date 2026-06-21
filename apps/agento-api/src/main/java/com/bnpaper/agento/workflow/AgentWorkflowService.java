@@ -2,6 +2,15 @@ package com.bnpaper.agento.workflow;
 
 import com.bnpaper.agento.brand.BrandProfile;
 import com.bnpaper.agento.brand.BrandProfileRepository;
+import com.bnpaper.agento.calendar.BatchGenerationJob;
+import com.bnpaper.agento.calendar.BatchGenerationJobRepository;
+import com.bnpaper.agento.calendar.BatchJobStatus;
+import com.bnpaper.agento.calendar.CalendarItem;
+import com.bnpaper.agento.calendar.CalendarItemRepository;
+import com.bnpaper.agento.calendar.CalendarItemStatus;
+import com.bnpaper.agento.calendar.CalendarStatus;
+import com.bnpaper.agento.calendar.ContentCalendar;
+import com.bnpaper.agento.calendar.ContentCalendarRepository;
 import com.bnpaper.agento.campaign.Campaign;
 import com.bnpaper.agento.campaign.CampaignRepository;
 import com.bnpaper.agento.common.exception.ResourceNotFoundException;
@@ -39,6 +48,9 @@ public class AgentWorkflowService {
     private final BrandProfileRepository brandRepo;
     private final ProductFactRepository productRepo;
     private final GeneratedContentRepository contentRepo;
+    private final CalendarItemRepository calendarItemRepo;
+    private final BatchGenerationJobRepository batchJobRepo;
+    private final ContentCalendarRepository calendarRepo;
     private final WorkerClient workerClient;
     private final WorkerProperties workerProperties;
     private final ObjectMapper objectMapper;
@@ -90,6 +102,68 @@ public class AgentWorkflowService {
         workflow = workflowRepo.save(workflow);
         List<AgentStepResult> steps = stepRepo.findByWorkflowIdOrderByStartedAtAsc(workflow.getId());
         return AgentWorkflowDto.toResponse(workflow, steps);
+    }
+
+    /** Creates a workflow for a single calendar item and dispatches it to agento-worker. */
+    @Transactional
+    public AgentWorkflow createAndDispatchForCalendarItem(UUID calendarItemId) {
+        CalendarItem item = calendarItemRepo.findById(calendarItemId)
+                .orElseThrow(() -> new ResourceNotFoundException("CalendarItem", calendarItemId));
+
+        BrandProfile brand = brandRepo.findFirstByOrderByCreatedAtAsc()
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No brand profile found. Please create a brand profile before generating content."));
+
+        List<ProductFact> products = productRepo.findAll();
+
+        Map<String, Object> campaignContext = Map.of(
+                "id", calendarItemId.toString(),
+                "name", "Calendar " + item.getPlannedDate() + " — " + item.getChannel(),
+                "objective", resolveCalendarObjective(item.getCalendarId()),
+                "channel", item.getChannel(),
+                "targetAudience", nullToEmpty(item.getTargetAudience()),
+                "contentAngle", nullToEmpty(item.getContentAngle())
+        );
+
+        String inputJson = buildInputJsonForCalendarItem(campaignContext, brand, products, item);
+
+        AgentWorkflow workflow = AgentWorkflow.builder()
+                .calendarItemId(calendarItemId)
+                .status(AgentWorkflowStatus.PENDING)
+                .inputPayload(inputJson)
+                .build();
+        workflow = workflowRepo.save(workflow);
+
+        AgentWorkflowDto.DispatchRequest dispatch = AgentWorkflowDto.DispatchRequest.builder()
+                .workflowId(workflow.getId().toString())
+                .campaignId(calendarItemId.toString())
+                .callbackBaseUrl(workerProperties.getCallbackBaseUrl())
+                .callbackApiKey(configuredApiKey)
+                .brand(brandToMap(brand))
+                .products(productsToList(products))
+                .campaign(campaignContext)
+                .build();
+
+        try {
+            workerClient.dispatch(dispatch);
+            workflow.setStatus(AgentWorkflowStatus.RUNNING);
+            workflow.setCurrentStep("brand_strategist");
+        } catch (WorkerClient.WorkerUnavailableException e) {
+            log.warn("Worker unavailable — calendar item workflow {} stays PENDING: {}",
+                    workflow.getId(), e.getMessage());
+            workflow.setStatus(AgentWorkflowStatus.FAILED);
+            workflow.setErrorMessage("agento-worker unavailable: " + e.getMessage());
+        }
+
+        workflow = workflowRepo.save(workflow);
+
+        item.setWorkflowId(workflow.getId());
+        if (workflow.getStatus() == AgentWorkflowStatus.FAILED) {
+            item.setStatus(CalendarItemStatus.FAILED);
+        }
+        calendarItemRepo.save(item);
+
+        return workflow;
     }
 
     public List<AgentWorkflowDto.Response> findByCampaign(UUID campaignId) {
@@ -243,6 +317,7 @@ public class AgentWorkflowService {
 
         GeneratedContent content = GeneratedContent.builder()
                 .campaignId(workflow.getCampaignId())
+                .calendarItemId(workflow.getCalendarItemId())
                 .workflowId(workflowId)
                 .contentType("AGENT_WORKFLOW")
                 .title(fc.getTitle())
@@ -273,6 +348,10 @@ public class AgentWorkflowService {
         workflow.setErrorMessage(null);
         workflowRepo.save(workflow);
 
+        if (workflow.getCalendarItemId() != null) {
+            markCalendarItemCompleted(workflow.getCalendarItemId(), saved.getId());
+        }
+
         log.info("Workflow {} completed — GeneratedContent {} saved as DRAFT", workflowId, saved.getId());
     }
 
@@ -291,6 +370,10 @@ public class AgentWorkflowService {
             workflow.setCurrentStep(req.getFailedStep());
         }
         workflowRepo.save(workflow);
+
+        if (workflow.getCalendarItemId() != null) {
+            markCalendarItemFailed(workflow.getCalendarItemId(), req.getErrorMessage());
+        }
 
         log.warn("Workflow {} failed at step {}: {}", workflowId, req.getFailedStep(), req.getErrorMessage());
     }
@@ -401,6 +484,77 @@ public class AgentWorkflowService {
 
     private String nullToEmpty(String s) {
         return s != null ? s : "";
+    }
+
+    private String resolveCalendarObjective(UUID calendarId) {
+        return calendarRepo.findById(calendarId)
+                .map(ContentCalendar::getObjective)
+                .map(this::nullToEmpty)
+                .orElse("");
+    }
+
+    private String buildInputJsonForCalendarItem(
+            Map<String, Object> campaignContext, BrandProfile brand,
+            List<ProductFact> products, CalendarItem item) {
+        try {
+            Map<String, Object> payload = new java.util.LinkedHashMap<>();
+            payload.put("campaign", campaignContext);
+            payload.put("brand", brandToMap(brand));
+            payload.put("products", productsToList(products));
+            payload.put("calendarItem", Map.of(
+                    "hookDirection", nullToEmpty(item.getHookDirection()),
+                    "ctaDirection", nullToEmpty(item.getCtaDirection()),
+                    "targetAudience", nullToEmpty(item.getTargetAudience()),
+                    "contentAngle", nullToEmpty(item.getContentAngle()),
+                    "contentType", nullToEmpty(item.getContentType())
+            ));
+            return objectMapper.writeValueAsString(payload);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Failed to serialize calendar item workflow input", e);
+        }
+    }
+
+    @Transactional
+    protected void markCalendarItemCompleted(UUID calendarItemId, UUID contentId) {
+        CalendarItem item = calendarItemRepo.findById(calendarItemId).orElse(null);
+        if (item == null) return;
+        item.setGeneratedContentId(contentId);
+        item.setStatus(CalendarItemStatus.COMPLETED);
+        calendarItemRepo.save(item);
+        updateBatchJobProgress(item.getCalendarId());
+    }
+
+    @Transactional
+    protected void markCalendarItemFailed(UUID calendarItemId, String errorMessage) {
+        CalendarItem item = calendarItemRepo.findById(calendarItemId).orElse(null);
+        if (item == null) return;
+        item.setStatus(CalendarItemStatus.FAILED);
+        calendarItemRepo.save(item);
+        updateBatchJobProgress(item.getCalendarId());
+    }
+
+    private void updateBatchJobProgress(UUID calendarId) {
+        batchJobRepo.findFirstByCalendarIdOrderByCreatedAtDesc(calendarId).ifPresent(job -> {
+            if (job.getStatus() == BatchJobStatus.RUNNING) {
+                List<CalendarItem> items = calendarItemRepo
+                        .findByCalendarIdOrderByPlannedDateAsc(calendarId);
+                long completed = items.stream()
+                        .filter(i -> i.getStatus() == CalendarItemStatus.COMPLETED).count();
+                long failed = items.stream()
+                        .filter(i -> i.getStatus() == CalendarItemStatus.FAILED).count();
+                job.setCompletedItems((int) completed);
+                job.setFailedItems((int) failed);
+
+                if (completed + failed >= job.getTotalItems()) {
+                    job.setStatus(BatchJobStatus.COMPLETED);
+                    calendarRepo.findById(calendarId).ifPresent(cal -> {
+                        cal.setStatus(CalendarStatus.READY_FOR_REVIEW);
+                        calendarRepo.save(cal);
+                    });
+                }
+                batchJobRepo.save(job);
+            }
+        });
     }
 
     /** Typed container for deserializing the stored workflow input payload on retry. */

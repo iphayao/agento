@@ -1,5 +1,6 @@
 package com.bnpaper.agento.workflow;
 
+import com.bnpaper.agento.calendar.ContentCalendarDto;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -32,6 +33,28 @@ public class WorkerClient {
                     .body(DispatchResponse.class);
             log.info("Worker accepted workflow {} — response: {}", request.getWorkflowId(),
                     response != null ? response.getMessage() : "null");
+        } catch (RestClientException e) {
+            throw new WorkerUnavailableException(
+                    "agento-worker is unreachable at " + properties.getBaseUrl() + ": " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Calls the Calendar Planner agent synchronously and returns item suggestions.
+     * Throws WorkerUnavailableException if the worker cannot be reached.
+     */
+    public ContentCalendarDto.PlanWorkerResponse planCalendar(ContentCalendarDto.PlanWorkerRequest request) {
+        try {
+            ContentCalendarDto.PlanWorkerResponse response = buildClient().post()
+                    .uri(URI.create(properties.getBaseUrl() + "/calendar/plan"))
+                    .body(request)
+                    .retrieve()
+                    .body(ContentCalendarDto.PlanWorkerResponse.class);
+            log.info("Worker returned {} calendar suggestions for calendar {}",
+                    response != null && response.getSuggestions() != null
+                            ? response.getSuggestions().size() : 0,
+                    request.getCalendarId());
+            return response;
         } catch (RestClientException e) {
             throw new WorkerUnavailableException(
                     "agento-worker is unreachable at " + properties.getBaseUrl() + ": " + e.getMessage(), e);

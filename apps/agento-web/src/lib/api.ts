@@ -3,11 +3,18 @@ import type {
   AgentStepResult,
   AnalyzeRequest,
   ApiResponse,
+  BatchGenerationJob,
   BrandProfile,
   BrandProfileRequest,
+  CalendarItem,
+  CalendarItemRequest,
+  CalendarItemUpdateRequest,
   Campaign,
   CampaignRequest,
   ChannelBreakdown,
+  ContentCalendar,
+  ContentCalendarRequest,
+  ContentCalendarUpdateRequest,
   ContentInsight,
   ContentPerformance,
   ContentPerformanceRequest,
@@ -159,6 +166,50 @@ export const performanceApi = {
       method: "POST",
       body: JSON.stringify(data),
     }),
+};
+
+// Content Calendar
+export const calendarApi = {
+  list: () => apiFetch<ContentCalendar[]>("/content-calendars"),
+  get: (id: string) => apiFetch<ContentCalendar>(`/content-calendars/${id}`),
+  create: (data: ContentCalendarRequest) =>
+    apiFetch<ContentCalendar>("/content-calendars", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  update: (id: string, data: ContentCalendarUpdateRequest) =>
+    apiFetch<ContentCalendar>(`/content-calendars/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  delete: (id: string) =>
+    apiFetch<void>(`/content-calendars/${id}`, { method: "DELETE" }),
+
+  // Items
+  listItems: (calendarId: string) =>
+    apiFetch<CalendarItem[]>(`/content-calendars/${calendarId}/items`),
+  addItem: (calendarId: string, data: CalendarItemRequest) =>
+    apiFetch<CalendarItem>(`/content-calendars/${calendarId}/items`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  updateItem: (calendarId: string, itemId: string, data: CalendarItemUpdateRequest) =>
+    apiFetch<CalendarItem>(`/content-calendars/${calendarId}/items/${itemId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  deleteItem: (calendarId: string, itemId: string) =>
+    apiFetch<void>(`/content-calendars/${calendarId}/items/${itemId}`, { method: "DELETE" }),
+
+  // AI Planning
+  plan: (calendarId: string) =>
+    apiFetch<CalendarItem[]>(`/content-calendars/${calendarId}/plan`, { method: "POST" }),
+
+  // Batch Generation
+  generate: (calendarId: string) =>
+    apiFetch<BatchGenerationJob>(`/content-calendars/${calendarId}/generate`, { method: "POST" }),
+  getBatchJob: (calendarId: string) =>
+    apiFetch<BatchGenerationJob>(`/content-calendars/${calendarId}/batch-job`),
 };
 
 // Agent Workflows

@@ -23,8 +23,9 @@ public class GeneratedContent {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false)
     private UUID campaignId;
+
+    private UUID calendarItemId;
 
     private String contentType;
 

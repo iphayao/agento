@@ -12,6 +12,7 @@ const navLinks = [
   { href: "/brand", label: "Brand Profile" },
   { href: "/products", label: "Products" },
   { href: "/campaigns", label: "Campaigns" },
+  { href: "/calendars", label: "Content Calendar" },
   { href: "/content", label: "Content Review" },
   { href: "/knowledge", label: "Knowledge Base" },
   { href: "/performance", label: "Performance" },
@@ -44,7 +45,7 @@ export default function RootLayout({
               ))}
             </nav>
             <div className="p-3 border-t border-gray-200">
-              <div className="text-xs text-gray-400">Phase 04 — Performance</div>
+              <div className="text-xs text-gray-400">Phase 05 — Calendar</div>
             </div>
           </aside>
 

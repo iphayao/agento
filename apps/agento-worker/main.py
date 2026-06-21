@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.routers.workflows import router as workflows_router
 from app.routers.performance import router as performance_router
+from app.routers.calendar import router as calendar_router
 
 logging.basicConfig(
     level=getattr(logging, settings.log_level.upper(), logging.INFO),
@@ -17,7 +18,7 @@ logging.basicConfig(
 app = FastAPI(
     title="agento-worker",
     description="LangGraph agentic workflow executor for Agento content generation",
-    version="2.0.0",
+    version="5.0.0",
 )
 
 app.add_middleware(
@@ -29,6 +30,7 @@ app.add_middleware(
 
 app.include_router(workflows_router)
 app.include_router(performance_router)
+app.include_router(calendar_router)
 
 
 @app.get("/health")
