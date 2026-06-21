@@ -1,0 +1,77 @@
+## Agento Helm Chart Default Values
+## Override in values-prod.yaml before deployment
+
+global:
+  namespace: agento
+  imageTag: latest
+
+# ── agento-api ────────────────────────────────────────────────────────────────
+api:
+  image:
+    repository: agento-api
+    tag: ""  # defaults to global.imageTag
+    pullPolicy: IfNotPresent
+  replicaCount: 1
+  resources:
+    requests: { cpu: 250m, memory: 512Mi }
+    limits:   { cpu: "1",  memory: 1Gi }
+  service:
+    type: ClusterIP
+    port: 8080
+  env:
+    JWT_ENABLED: "true"
+    JWT_EXPIRATION_SECONDS: "28800"
+    AI_RATE_LIMIT: "10"
+    AI_MODEL: "gpt-4o-mini"
+    AI_BASE_URL: "https://api.openai.com/v1"
+  secrets:
+    # Set these in a values-prod.yaml or via --set (never in source control)
+    postgresPassword: ""
+    jwtSecret: ""
+    apiKey: ""
+    aiApiKey: ""
+
+# ── agento-worker ─────────────────────────────────────────────────────────────
+worker:
+  image:
+    repository: agento-worker
+    tag: ""
+    pullPolicy: IfNotPresent
+  replicaCount: 1
+  resources:
+    requests: { cpu: 250m, memory: 512Mi }
+    limits:   { cpu: "1",  memory: 1Gi }
+  service:
+    type: ClusterIP
+    port: 8001
+  env:
+    AI_PROVIDER: "openai"
+    AI_MODEL: "gpt-4o-mini"
+    LOG_LEVEL: "INFO"
+
+# ── agento-web ────────────────────────────────────────────────────────────────
+web:
+  image:
+    repository: agento-web
+    tag: ""
+    pullPolicy: IfNotPresent
+  replicaCount: 1
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits:   { cpu: 500m, memory: 512Mi }
+  service:
+    type: LoadBalancer
+    port: 3000
+
+# ── PostgreSQL (sub-chart or external) ────────────────────────────────────────
+postgresql:
+  enabled: true
+  image: pgvector/pgvector:pg16
+  auth:
+    database: agento
+    username: agento
+    password: ""  # override in values-prod.yaml
+  primary:
+    persistence:
+      enabled: true
+      size: 10Gi

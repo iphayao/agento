@@ -1,8 +1,8 @@
 """Async HTTP helpers for calling back to the Spring Boot API."""
 
-import json
 import logging
 import httpx
+from app.middleware import get_correlation_id
 from app.models import (
     StepCallbackPayload,
     CompleteCallbackPayload,
@@ -17,6 +17,9 @@ def _headers(api_key: str) -> dict:
     h = {"Content-Type": "application/json"}
     if api_key:
         h["X-Api-Key"] = api_key
+    correlation_id = get_correlation_id()
+    if correlation_id:
+        h["X-Correlation-ID"] = correlation_id
     return h
 
 

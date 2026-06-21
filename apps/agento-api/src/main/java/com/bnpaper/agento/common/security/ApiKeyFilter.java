@@ -16,12 +16,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 /**
- * Validates the X-Api-Key header on all non-OPTIONS requests.
- * When AGENTO_API_KEY env var is not set the filter allows all traffic (dev/test mode).
- * Set AGENTO_API_KEY to a strong secret before exposing this service to any network.
+ * Legacy servlet filter kept for reference. Authentication is now handled by Spring Security
+ * (SecurityConfig + ApiKeyAuthenticationFilter + JwtAuthenticationFilter).
+ * Disabled: @Component removed to prevent duplicate filter registration.
  */
 @Slf4j
-@Component
 public class ApiKeyFilter extends OncePerRequestFilter {
 
     static final String API_KEY_HEADER = "X-Api-Key";

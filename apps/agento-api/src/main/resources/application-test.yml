@@ -17,6 +17,13 @@ spring:
     enabled: false
 
 agento:
+  security:
+    api-key: ""
+    jwt:
+      enabled: false
+      secret: test-secret-key-at-least-32-chars-long
+  rate-limit:
+    ai-calls-per-minute: 1000
   ai:
     api-key: test-key
     base-url: http://localhost:9999

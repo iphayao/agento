@@ -27,6 +27,14 @@ spring:
 agento:
   security:
     api-key: ${AGENTO_API_KEY:}
+    jwt:
+      secret: ${JWT_SECRET:changeme-replace-with-32-char-key-in-prod}
+      expiration-seconds: ${JWT_EXPIRATION_SECONDS:28800}
+      enabled: ${JWT_ENABLED:false}
+
+  rate-limit:
+    ai-calls-per-minute: ${AI_RATE_LIMIT:10}
+
   worker:
     base-url: ${WORKER_URL:http://localhost:8001}
     api-key: ${WORKER_API_KEY:}
@@ -53,7 +61,25 @@ agento:
   storage:
     local-path: ${EXPORT_STORAGE_PATH:${java.io.tmpdir}/agento-exports}
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when_authorized
+      show-components: always
+  health:
+    db:
+      enabled: true
+    redis:
+      enabled: false
+
 logging:
   level:
     com.bnpaper.agento: INFO
     org.flywaydb: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] [%X{correlationId}] %-5level %logger{36} — %msg%n"

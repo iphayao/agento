@@ -58,9 +58,16 @@ public class AgentWorkflowService {
     @Value("${agento.security.api-key:}")
     private String configuredApiKey;
 
-    /** Creates a workflow record and dispatches it to agento-worker. */
+    /** Creates a workflow record and dispatches it to agento-worker. Prevents duplicate dispatch. */
     @Transactional
     public AgentWorkflowDto.Response createAndDispatch(UUID campaignId) {
+        // Idempotency: prevent duplicate dispatch if a workflow is already active
+        if (workflowRepo.existsByCampaignIdAndStatusIn(
+                campaignId, List.of(AgentWorkflowStatus.PENDING, AgentWorkflowStatus.RUNNING))) {
+            throw new IllegalStateException(
+                    "A workflow is already running for this campaign. Wait for it to complete or cancel it first.");
+        }
+
         Campaign campaign = campaignRepo.findById(campaignId)
                 .orElseThrow(() -> new ResourceNotFoundException("Campaign", campaignId));
 

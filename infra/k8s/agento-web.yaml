@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agento-web
+  namespace: agento
+  labels:
+    app: agento-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agento-web
+  template:
+    metadata:
+      labels:
+        app: agento-web
+    spec:
+      containers:
+        - name: agento-web
+          image: agento-web:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: API_URL
+              value: http://agento-api:8080/api
+            - name: NODE_ENV
+              value: production
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agento-web
+  namespace: agento
+spec:
+  selector:
+    app: agento-web
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+  type: LoadBalancer

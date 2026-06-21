@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agento-worker
+  namespace: agento
+  labels:
+    app: agento-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agento-worker
+  template:
+    metadata:
+      labels:
+        app: agento-worker
+    spec:
+      containers:
+        - name: agento-worker
+          image: agento-worker:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8001
+          envFrom:
+            - configMapRef:
+                name: agento-config
+            - secretRef:
+                name: agento-secrets
+          env:
+            - name: AGENTO_API_URL
+              value: http://agento-api:8080/api
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agento-worker
+  namespace: agento
+spec:
+  selector:
+    app: agento-worker
+  ports:
+    - protocol: TCP
+      port: 8001
+      targetPort: 8001

@@ -1,16 +1,20 @@
 /**
  * Catch-all proxy that forwards browser requests to the Spring Boot API.
  *
- * The API_KEY env var is server-side only (no NEXT_PUBLIC_ prefix), so it
- * never appears in the browser bundle. The browser calls /api/* and this
- * handler injects the key and forwards to the backend.
+ * Security model:
+ * - Browser sends Authorization: Bearer <JWT> for all API calls
+ * - This proxy forwards that header to Spring Boot unchanged
+ * - Spring Boot validates the JWT and enforces RBAC
+ * - LLM/AI API keys are NEVER exposed to the browser (they live in Spring Boot env vars)
+ * - X-Correlation-ID is generated here if absent and propagated through the stack
  */
 import { type NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 
 const API_URL = process.env.API_URL ?? "http://localhost:8080/api";
-const API_KEY = process.env.API_KEY ?? "";
 
 const METHODS_WITH_BODY = new Set(["POST", "PUT", "PATCH"]);
+const CORRELATION_ID_HEADER = "X-Correlation-ID";
 
 async function proxyRequest(
   request: NextRequest,
@@ -21,16 +25,25 @@ async function proxyRequest(
   const qs = searchParams.toString();
   const target = `${API_URL}/${pathStr}${qs ? `?${qs}` : ""}`;
 
+  // Generate or propagate correlation ID
+  const correlationId =
+    request.headers.get(CORRELATION_ID_HEADER) ?? randomUUID();
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    [CORRELATION_ID_HEADER]: correlationId,
   };
-  if (API_KEY) {
-    headers["X-Api-Key"] = API_KEY;
+
+  // Forward JWT from browser to Spring Boot
+  const authHeader = request.headers.get("Authorization");
+  if (authHeader) {
+    headers["Authorization"] = authHeader;
   }
 
   const init: RequestInit = { method: request.method, headers };
   if (METHODS_WITH_BODY.has(request.method)) {
-    init.body = await request.text();
+    const body = await request.text();
+    if (body) init.body = body;
   }
 
   try {
@@ -38,19 +51,21 @@ async function proxyRequest(
     const contentType = res.headers.get("content-type") ?? "";
 
     if (!contentType.includes("application/json")) {
-      // Binary or text file download — stream bytes through
       const buf = await res.arrayBuffer();
       return new NextResponse(buf, {
         status: res.status,
         headers: {
           "Content-Type": contentType || "application/octet-stream",
           "Content-Disposition": res.headers.get("Content-Disposition") ?? "attachment",
+          [CORRELATION_ID_HEADER]: correlationId,
         },
       });
     }
 
     const data = await res.json().catch(() => null);
-    return NextResponse.json(data, { status: res.status });
+    const nextRes = NextResponse.json(data, { status: res.status });
+    nextRes.headers.set(CORRELATION_ID_HEADER, correlationId);
+    return nextRes;
   } catch {
     return NextResponse.json(
       { success: false, message: "Failed to reach the API server", data: null },
@@ -59,8 +74,8 @@ async function proxyRequest(
   }
 }
 
-export const GET = proxyRequest;
-export const POST = proxyRequest;
-export const PUT = proxyRequest;
-export const PATCH = proxyRequest;
+export const GET    = proxyRequest;
+export const POST   = proxyRequest;
+export const PUT    = proxyRequest;
+export const PATCH  = proxyRequest;
 export const DELETE = proxyRequest;

@@ -30,6 +30,7 @@ class ExportControllerTest {
 
     @Mock private ExportService exportService;
     @Mock private StorageService storageService;
+    @Mock private com.bnpaper.agento.audit.AuditService auditService;
 
     @InjectMocks private ExportController controller;
 

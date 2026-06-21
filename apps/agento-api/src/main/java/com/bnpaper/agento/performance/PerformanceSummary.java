@@ -43,7 +43,7 @@ public class PerformanceSummary {
     private List<String> recommendedHooks;
 
     @Convert(converter = StringListConverter.class)
-    @Column(columnDefinition = "text")
+    @Column(name = "recommended_ctas", columnDefinition = "text")
     private List<String> recommendedCTAs;
 
     @Convert(converter = StringListConverter.class)

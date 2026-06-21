@@ -1,7 +1,8 @@
 package com.bnpaper.agento.export;
 
+import com.bnpaper.agento.audit.AuditAction;
+import com.bnpaper.agento.audit.AuditService;
 import com.bnpaper.agento.common.dto.ApiResponse;
-import com.bnpaper.agento.common.exception.ResourceNotFoundException;
 import com.bnpaper.agento.storage.StorageService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -22,6 +23,7 @@ public class ExportController {
 
     private final ExportService exportService;
     private final StorageService storageService;
+    private final AuditService auditService;
 
     @PostMapping("/content")
     public ResponseEntity<ApiResponse<ExportJobDto.ExportJobResponse>> exportContent(
@@ -30,6 +32,10 @@ public class ExportController {
 
         ExportJob job = exportService.createContentExportJob(req);
         exportService.runContentExport(job.getId());
+
+        auditService.log(AuditAction.EXPORT_STARTED, "ExportJob", job.getId(),
+                "type=" + job.getExportType(), httpReq.getRemoteAddr());
+
         return ResponseEntity.status(HttpStatus.ACCEPTED)
                 .body(ApiResponse.success(toResponse(job, httpReq), "Export started"));
     }
@@ -41,6 +47,10 @@ public class ExportController {
 
         ExportJob job = exportService.createCalendarExportJob(calendarId);
         exportService.runCalendarExport(job.getId());
+
+        auditService.log(AuditAction.EXPORT_STARTED, "ExportJob", job.getId(),
+                "calendar=" + calendarId, httpReq.getRemoteAddr());
+
         return ResponseEntity.status(HttpStatus.ACCEPTED)
                 .body(ApiResponse.success(toResponse(job, httpReq), "Export started"));
     }
@@ -57,7 +67,6 @@ public class ExportController {
     public ResponseEntity<ApiResponse<ExportJobDto.ExportJobResponse>> get(
             @PathVariable UUID id,
             HttpServletRequest httpReq) {
-
         ExportJob job = exportService.getJob(id);
         return ResponseEntity.ok(ApiResponse.success(toResponse(job, httpReq)));
     }
@@ -77,8 +86,6 @@ public class ExportController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                 .body(data);
     }
-
-    // ── Helper ────────────────────────────────────────────────────────────────
 
     private ExportJobDto.ExportJobResponse toResponse(ExportJob job, HttpServletRequest req) {
         String downloadUrl = job.getStatus() == ExportStatus.COMPLETED

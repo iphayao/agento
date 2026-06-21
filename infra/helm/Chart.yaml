@@ -1,0 +1,10 @@
+apiVersion: v2
+name: agento
+description: Agento — Agentic AI Content System for BN Paper SoClean brand
+type: application
+version: 0.7.0
+appVersion: "7.0.0"
+
+maintainers:
+  - name: BN Paper
+    email: dev@bnpaper.com

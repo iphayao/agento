@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agento-api
+  namespace: agento
+  labels:
+    app: agento-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agento-api
+  template:
+    metadata:
+      labels:
+        app: agento-api
+    spec:
+      containers:
+        - name: agento-api
+          image: agento-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: agento-config
+            - secretRef:
+                name: agento-secrets
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://postgres:5432/agento
+            - name: WORKER_URL
+              value: http://agento-worker:8001
+            - name: API_CALLBACK_URL
+              value: http://agento-api:8080/api
+            - name: EXPORT_STORAGE_PATH
+              value: /data/exports
+          volumeMounts:
+            - name: export-storage
+              mountPath: /data/exports
+          livenessProbe:
+            httpGet:
+              path: /api/actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 90
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+      volumes:
+        - name: export-storage
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agento-api
+  namespace: agento
+spec:
+  selector:
+    app: agento-api
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080

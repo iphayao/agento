@@ -1,11 +1,15 @@
 package com.bnpaper.agento.performance;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.bnpaper.agento.security.SecurityConfig;
+import com.bnpaper.agento.security.PasswordEncoderConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -20,6 +24,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(ContentPerformanceController.class)
+@Import({SecurityConfig.class, PasswordEncoderConfig.class})
+@WithMockUser(roles = "ADMIN")
 class ContentPerformanceControllerTest {
 
     @Autowired

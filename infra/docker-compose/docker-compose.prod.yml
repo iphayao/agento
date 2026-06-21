@@ -1,0 +1,136 @@
+## Production Docker Compose — all services with TLS-ready reverse proxy notes.
+## Copy .env.prod.example to .env.prod and fill in secrets before running.
+## Usage: docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+
+services:
+
+  # ── Infrastructure ──────────────────────────────────────────────────────────
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: agento-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ${POSTGRES_DB:-agento}
+      POSTGRES_USER:     ${POSTGRES_USER:-agento}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks: [agento]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-agento}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: agento-redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    volumes:
+      - redis_data:/data
+    networks: [agento]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ── Application services ────────────────────────────────────────────────────
+
+  agento-api:
+    build:
+      context: ../../apps/agento-api
+      dockerfile: Dockerfile
+    image: agento-api:latest
+    container_name: agento-api
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+    networks: [agento]
+    ports:
+      - "${API_PORT:-8080}:8080"
+    environment:
+      POSTGRES_USERNAME:       ${POSTGRES_USER:-agento}
+      POSTGRES_PASSWORD:       ${POSTGRES_PASSWORD}
+      SPRING_DATASOURCE_URL:   jdbc:postgresql://postgres:5432/${POSTGRES_DB:-agento}
+      AGENTO_API_KEY:          ${AGENTO_API_KEY:?AGENTO_API_KEY is required}
+      JWT_SECRET:              ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_ENABLED:             "true"
+      JWT_EXPIRATION_SECONDS:  ${JWT_EXPIRATION_SECONDS:-28800}
+      AI_API_KEY:              ${AI_API_KEY:?AI_API_KEY is required}
+      AI_BASE_URL:             ${AI_BASE_URL:-https://api.openai.com/v1}
+      AI_MODEL:                ${AI_MODEL:-gpt-4o-mini}
+      WORKER_URL:              http://agento-worker:8001
+      WORKER_API_KEY:          ${WORKER_API_KEY:?WORKER_API_KEY is required}
+      API_CALLBACK_URL:        http://agento-api:8080/api
+      EMBEDDING_API_KEY:       ${EMBEDDING_API_KEY:-${AI_API_KEY}}
+      EXPORT_STORAGE_PATH:     /data/exports
+      AI_RATE_LIMIT:           ${AI_RATE_LIMIT:-10}
+    volumes:
+      - export_data:/data/exports
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/api/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 90s
+      retries: 3
+
+  agento-worker:
+    build:
+      context: ../../apps/agento-worker
+      dockerfile: Dockerfile
+    image: agento-worker:latest
+    container_name: agento-worker
+    restart: unless-stopped
+    depends_on:
+      agento-api: { condition: service_healthy }
+    networks: [agento]
+    environment:
+      AGENTO_API_URL:   http://agento-api:8080/api
+      AGENTO_API_KEY:   ${AGENTO_API_KEY}
+      WORKER_API_KEY:   ${WORKER_API_KEY}
+      AI_PROVIDER:      ${AI_PROVIDER:-openai}
+      AI_API_KEY:       ${AI_API_KEY}
+      AI_BASE_URL:      ${AI_BASE_URL:-https://api.openai.com/v1}
+      AI_MODEL:         ${AI_MODEL:-gpt-4o-mini}
+      LOG_LEVEL:        ${LOG_LEVEL:-INFO}
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8001/health')\""]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+
+  agento-web:
+    build:
+      context: ../../apps/agento-web
+      dockerfile: Dockerfile
+    image: agento-web:latest
+    container_name: agento-web
+    restart: unless-stopped
+    depends_on:
+      agento-api: { condition: service_healthy }
+    networks: [agento]
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    environment:
+      API_URL: http://agento-api:8080/api
+      # API_KEY is intentionally NOT set — browser auth uses JWT
+      NODE_ENV: production
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+
+volumes:
+  postgres_data:
+  redis_data:
+  export_data:
+
+networks:
+  agento:
+    driver: bridge

@@ -1,6 +1,9 @@
 package com.bnpaper.agento.knowledge;
 
+import com.bnpaper.agento.audit.AuditAction;
+import com.bnpaper.agento.audit.AuditService;
 import com.bnpaper.agento.common.dto.ApiResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,6 +18,7 @@ import java.util.UUID;
 public class KnowledgeController {
 
     private final KnowledgeDocumentService service;
+    private final AuditService auditService;
 
     @GetMapping
     public ApiResponse<List<KnowledgeDocumentDto.Response>> findAll() {
@@ -34,26 +38,36 @@ public class KnowledgeController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<KnowledgeDocumentDto.Response> create(
-            @Valid @RequestBody KnowledgeDocumentDto.Request request) {
-        return ApiResponse.success(service.create(request));
+            @Valid @RequestBody KnowledgeDocumentDto.Request request,
+            HttpServletRequest httpReq) {
+        KnowledgeDocumentDto.Response res = service.create(request);
+        auditService.log(AuditAction.KNOWLEDGE_CREATED, "KnowledgeDocument", res.getId(),
+                "title=" + request.getTitle(), httpReq.getRemoteAddr());
+        return ApiResponse.success(res);
     }
 
     @PutMapping("/{id}")
     public ApiResponse<KnowledgeDocumentDto.Response> update(
             @PathVariable UUID id,
-            @Valid @RequestBody KnowledgeDocumentDto.Request request) {
-        return ApiResponse.success(service.update(id, request));
+            @Valid @RequestBody KnowledgeDocumentDto.Request request,
+            HttpServletRequest httpReq) {
+        KnowledgeDocumentDto.Response res = service.update(id, request);
+        auditService.log(AuditAction.KNOWLEDGE_UPDATED, "KnowledgeDocument", id,
+                "title=" + request.getTitle(), httpReq.getRemoteAddr());
+        return ApiResponse.success(res);
     }
 
     @PutMapping("/{id}/archive")
-    public ApiResponse<Void> archive(@PathVariable UUID id) {
+    public ApiResponse<Void> archive(@PathVariable UUID id, HttpServletRequest httpReq) {
         service.archive(id);
+        auditService.log(AuditAction.KNOWLEDGE_ARCHIVED, "KnowledgeDocument", id, null, httpReq.getRemoteAddr());
         return ApiResponse.success(null);
     }
 
     @DeleteMapping("/{id}")
-    public ApiResponse<Void> delete(@PathVariable UUID id) {
+    public ApiResponse<Void> delete(@PathVariable UUID id, HttpServletRequest httpReq) {
         service.delete(id);
+        auditService.log(AuditAction.KNOWLEDGE_DELETED, "KnowledgeDocument", id, null, httpReq.getRemoteAddr());
         return ApiResponse.success(null);
     }
 
