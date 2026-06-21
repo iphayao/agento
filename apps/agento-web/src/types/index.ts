@@ -443,3 +443,48 @@ export const CALENDAR_STATUSES: { value: CalendarStatus; label: string }[] = [
   { value: "READY_FOR_REVIEW", label: "Ready for Review" },
   { value: "APPROVED", label: "Approved" },
 ];
+
+// ── Export Jobs ─────────────────────────────────────────────────────────────
+
+export type ExportType =
+  | "CONTENT_CSV"
+  | "CALENDAR_CSV"
+  | "VIDEO_SCRIPT_PACK"
+  | "RESELLER_CAPTION_PACK"
+  | "MARKETPLACE_COPY_PACK";
+
+export type ExportStatus = "PENDING" | "RUNNING" | "COMPLETED" | "FAILED";
+
+export interface ExportJob {
+  id: string;
+  exportType: ExportType;
+  status: ExportStatus;
+  calendarId?: string;
+  campaignId?: string;
+  channel?: string;
+  startDate?: string;
+  endDate?: string;
+  fileUrl?: string;
+  fileName?: string;
+  rowCount?: number;
+  errorMessage?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ContentExportRequest {
+  exportType: ExportType;
+  campaignId?: string;
+  channel?: string;
+  startDate?: string;
+  endDate?: string;
+  statuses?: string[];
+}
+
+export const EXPORT_TYPES: { value: ExportType; label: string; description: string }[] = [
+  { value: "CONTENT_CSV", label: "All Approved Content", description: "Export all approved content as CSV" },
+  { value: "VIDEO_SCRIPT_PACK", label: "Video Script Pack", description: "TikTok video scripts only" },
+  { value: "RESELLER_CAPTION_PACK", label: "Reseller Caption Pack", description: "Reseller sales posts only" },
+  { value: "MARKETPLACE_COPY_PACK", label: "Marketplace Copy Pack", description: "Shopee & Lazada descriptions only" },
+  { value: "CALENDAR_CSV", label: "Content Calendar", description: "Export a content calendar as CSV" },
+];

@@ -50,6 +50,9 @@ agento:
     connect-timeout-seconds: ${EMBEDDING_CONNECT_TIMEOUT:5}
     read-timeout-seconds: ${EMBEDDING_READ_TIMEOUT:30}
 
+  storage:
+    local-path: ${EXPORT_STORAGE_PATH:${java.io.tmpdir}/agento-exports}
+
 logging:
   level:
     com.bnpaper.agento: INFO

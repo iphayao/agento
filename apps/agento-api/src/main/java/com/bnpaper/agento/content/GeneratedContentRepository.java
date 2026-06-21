@@ -2,6 +2,7 @@ package com.bnpaper.agento.content;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -13,4 +14,6 @@ public interface GeneratedContentRepository extends JpaRepository<GeneratedConte
     List<GeneratedContent> findAllByOrderByCreatedAtDesc();
 
     Optional<GeneratedContent> findFirstByWorkflowIdOrderByCreatedAtDesc(UUID workflowId);
+
+    List<GeneratedContent> findByStatusInOrderByCreatedAtAsc(Collection<ContentStatus> statuses);
 }

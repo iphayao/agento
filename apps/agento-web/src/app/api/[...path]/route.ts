@@ -35,6 +35,20 @@ async function proxyRequest(
 
   try {
     const res = await fetch(target, init);
+    const contentType = res.headers.get("content-type") ?? "";
+
+    if (!contentType.includes("application/json")) {
+      // Binary or text file download — stream bytes through
+      const buf = await res.arrayBuffer();
+      return new NextResponse(buf, {
+        status: res.status,
+        headers: {
+          "Content-Type": contentType || "application/octet-stream",
+          "Content-Disposition": res.headers.get("Content-Disposition") ?? "attachment",
+        },
+      });
+    }
+
     const data = await res.json().catch(() => null);
     return NextResponse.json(data, { status: res.status });
   } catch {

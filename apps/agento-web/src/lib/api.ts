@@ -15,10 +15,12 @@ import type {
   ContentCalendar,
   ContentCalendarRequest,
   ContentCalendarUpdateRequest,
+  ContentExportRequest,
   ContentInsight,
   ContentPerformance,
   ContentPerformanceRequest,
   DashboardStats,
+  ExportJob,
   GeneratedContent,
   GenerateContentRequest,
   KnowledgeChunk,
@@ -210,6 +212,20 @@ export const calendarApi = {
     apiFetch<BatchGenerationJob>(`/content-calendars/${calendarId}/generate`, { method: "POST" }),
   getBatchJob: (calendarId: string) =>
     apiFetch<BatchGenerationJob>(`/content-calendars/${calendarId}/batch-job`),
+};
+
+// Exports
+export const exportApi = {
+  list: () => apiFetch<ExportJob[]>("/exports"),
+  get: (id: string) => apiFetch<ExportJob>(`/exports/${id}`),
+  exportContent: (data: ContentExportRequest) =>
+    apiFetch<ExportJob>("/exports/content", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  exportCalendar: (calendarId: string) =>
+    apiFetch<ExportJob>(`/exports/calendar/${calendarId}`, { method: "POST" }),
+  downloadUrl: (id: string) => `${BASE_URL}/exports/${id}/download`,
 };
 
 // Agent Workflows
