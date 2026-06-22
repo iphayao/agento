@@ -257,7 +257,7 @@ export default function ExportsPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50"
+            className="btn-primary"
           >
             {submitting ? "Starting export…" : "Export Now"}
           </button>
@@ -313,7 +313,7 @@ export default function ExportsPage() {
                   ) : job.status === "COMPLETED" ? (
                     <button
                       onClick={() => handleDownload(job)}
-                      className="px-3 py-1.5 bg-green-600 text-white text-xs rounded-md hover:bg-green-700 font-medium"
+                      className="btn-success btn-sm"
                     >
                       Download CSV
                     </button>

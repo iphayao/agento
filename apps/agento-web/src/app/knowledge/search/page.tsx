@@ -148,7 +148,7 @@ export default function KnowledgeSearchPage() {
                   <span className="text-xs font-medium text-gray-500">#{idx + 1} · </span>
                   <Link
                     href={`/knowledge/${match.documentId}`}
-                    className="text-sm font-medium text-blue-600 hover:underline"
+                    className="text-sm font-medium text-zinc-700 hover:text-zinc-900 hover:underline"
                   >
                     {match.documentTitle}
                   </Link>

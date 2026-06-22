@@ -223,14 +223,14 @@ export default function CalendarDetailPage() {
           <button
             onClick={handlePlan}
             disabled={planning}
-            className="px-3 py-2 border border-blue-600 text-blue-600 text-sm rounded-md hover:bg-blue-50 disabled:opacity-50"
+            className="btn-secondary"
           >
             {planning ? "Planning..." : "AI Plan"}
           </button>
           <button
             onClick={handleGenerate}
             disabled={generating || plannedCount === 0 || calendar.status === "GENERATING"}
-            className="px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50"
+            className="btn-primary"
           >
             {generating ? "Starting..." : `Generate All (${plannedCount})`}
           </button>
@@ -339,7 +339,7 @@ function AddItemForm({
 
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)} className="text-sm text-blue-600 hover:underline">
+      <button onClick={() => setOpen(true)} className="text-sm text-zinc-600 hover:text-zinc-900 hover:underline">
         + Add Item
       </button>
     );
@@ -399,7 +399,7 @@ function AddItemForm({
       <button
         type="submit"
         disabled={saving}
-        className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50"
+        className="btn-primary btn-sm"
       >
         {saving ? "Adding..." : "Add"}
       </button>
@@ -473,7 +473,7 @@ function ItemRow({
         <td className="px-4 py-2 text-xs">—</td>
         <td className="px-4 py-2">
           <div className="flex gap-2">
-            <button onClick={onSave} className="text-xs text-blue-600 hover:underline">Save</button>
+            <button onClick={onSave} className="text-xs text-zinc-600 hover:text-zinc-900 hover:underline">Save</button>
             <button onClick={onCancel} className="text-xs text-gray-500 hover:underline">Cancel</button>
           </div>
         </td>
@@ -495,7 +495,7 @@ function ItemRow({
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
           {item.status === "PLANNED" && (
-            <button onClick={onEdit} className="text-xs text-blue-600 hover:underline">Edit</button>
+            <button onClick={onEdit} className="text-xs text-zinc-600 hover:text-zinc-900 hover:underline">Edit</button>
           )}
           {item.generatedContentId && (
             <>

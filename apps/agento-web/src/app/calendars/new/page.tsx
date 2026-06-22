@@ -106,14 +106,14 @@ export default function NewCalendarPage() {
           <button
             type="submit"
             disabled={saving}
-            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50"
+            className="btn-primary"
           >
             {saving ? "Creating..." : "Create Calendar"}
           </button>
           <button
             type="button"
             onClick={() => router.back()}
-            className="px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-50"
+            className="btn-secondary"
           >
             Cancel
           </button>

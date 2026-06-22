@@ -47,20 +47,20 @@ export default function EditKnowledgePage() {
       <div className="flex gap-2 mb-5">
         <button
           onClick={() => setTab("edit")}
-          className={`px-4 py-2 rounded text-sm font-medium ${
+          className={`px-4 py-2 rounded-lg text-sm font-medium ${
             tab === "edit"
-              ? "bg-blue-600 text-white"
-              : "bg-white text-gray-600 border border-gray-200"
+              ? "bg-zinc-900 text-white"
+              : "bg-white text-zinc-600 border border-zinc-200 hover:bg-zinc-50"
           }`}
         >
           Edit Document
         </button>
         <button
           onClick={() => setTab("chunks")}
-          className={`px-4 py-2 rounded text-sm font-medium ${
+          className={`px-4 py-2 rounded-lg text-sm font-medium ${
             tab === "chunks"
-              ? "bg-blue-600 text-white"
-              : "bg-white text-gray-600 border border-gray-200"
+              ? "bg-zinc-900 text-white"
+              : "bg-white text-zinc-600 border border-zinc-200 hover:bg-zinc-50"
           }`}
         >
           View Chunks ({chunks.length})

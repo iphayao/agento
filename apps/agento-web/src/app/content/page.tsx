@@ -85,13 +85,13 @@ export default function ContentReviewPage() {
             onClick={() => setFilter(f.value)}
             className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
               filter === f.value
-                ? "bg-blue-600 text-white"
-                : "bg-white text-gray-600 border border-gray-300 hover:bg-gray-50"
+                ? "bg-zinc-900 text-white"
+                : "bg-white text-zinc-600 border border-zinc-200 hover:bg-zinc-50"
             }`}
           >
             {f.label}{" "}
             <span
-              className={`ml-1 ${filter === f.value ? "text-blue-200" : "text-gray-400"}`}
+              className={`ml-1 ${filter === f.value ? "text-zinc-300" : "text-zinc-400"}`}
             >
               {counts[f.value]}
             </span>
@@ -167,7 +167,7 @@ export default function ContentReviewPage() {
               <h3 className="font-semibold text-gray-900 mb-2">{content.title}</h3>
             )}
             {content.hook && (
-              <p className="text-blue-700 text-sm font-medium mb-1">{content.hook}</p>
+              <p className="text-zinc-800 text-sm font-medium mb-1">{content.hook}</p>
             )}
             {content.body && (
               <p className="text-gray-700 text-sm whitespace-pre-wrap mb-2">{content.body}</p>
@@ -178,7 +178,7 @@ export default function ContentReviewPage() {
             {content.hashtags && content.hashtags.length > 0 && (
               <div className="flex flex-wrap gap-1 mb-2">
                 {content.hashtags.map((tag, i) => (
-                  <span key={i} className="text-xs text-blue-500 font-medium">
+                  <span key={i} className="text-xs text-zinc-500 font-medium">
                     {tag}
                   </span>
                 ))}

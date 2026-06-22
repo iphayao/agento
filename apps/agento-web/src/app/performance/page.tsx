@@ -248,32 +248,9 @@ function PerformanceModal({
           {field("cost", "Cost (฿)")}
         </div>
         {field("notes", "Notes", "text")}
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 8 }}>
-          <button
-            onClick={onClose}
-            style={{
-              padding: "8px 16px",
-              border: "1px solid #d1d5db",
-              borderRadius: 6,
-              background: "white",
-              cursor: "pointer",
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={saving}
-            style={{
-              padding: "8px 16px",
-              background: "#2563eb",
-              color: "white",
-              border: "none",
-              borderRadius: 6,
-              cursor: saving ? "not-allowed" : "pointer",
-              opacity: saving ? 0.6 : 1,
-            }}
-          >
+        <div className="flex gap-2 justify-end mt-2">
+          <button onClick={onClose} className="btn-secondary">Cancel</button>
+          <button onClick={handleSubmit} disabled={saving} className="btn-primary">
             {saving ? "Saving…" : "Save"}
           </button>
         </div>
@@ -364,11 +341,11 @@ export default function PerformancePage() {
   const tabStyle = (tab: typeof activeTab) => ({
     padding: "8px 16px",
     border: "none",
-    borderBottom: activeTab === tab ? "2px solid #2563eb" : "2px solid transparent",
+    borderBottom: activeTab === tab ? "2px solid #18181b" : "2px solid transparent",
     background: "none",
     cursor: "pointer",
     fontWeight: activeTab === tab ? 700 : 400,
-    color: activeTab === tab ? "#2563eb" : "#6b7280",
+    color: activeTab === tab ? "#18181b" : "#6b7280",
     fontSize: 14,
   });
 
@@ -384,49 +361,18 @@ export default function PerformancePage() {
             Track content performance and generate AI insights.
           </p>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <Link
-            href="/performance/import"
-            style={{
-              padding: "8px 14px",
-              background: "white",
-              border: "1px solid #d1d5db",
-              borderRadius: 6,
-              fontSize: 14,
-              textDecoration: "none",
-              color: "#374151",
-            }}
-          >
+        <div className="flex gap-2">
+          <Link href="/performance/import" className="btn-secondary">
             Import CSV
           </Link>
           <button
             onClick={handleAnalyze}
             disabled={analyzing || records.length === 0}
-            style={{
-              padding: "8px 14px",
-              background: "#7c3aed",
-              color: "white",
-              border: "none",
-              borderRadius: 6,
-              cursor: analyzing || records.length === 0 ? "not-allowed" : "pointer",
-              opacity: analyzing || records.length === 0 ? 0.6 : 1,
-              fontSize: 14,
-            }}
+            className="btn-primary bg-violet-600 hover:bg-violet-700 focus:ring-violet-600"
           >
             {analyzing ? "Analyzing…" : "Generate Insights"}
           </button>
-          <button
-            onClick={() => setShowModal(true)}
-            style={{
-              padding: "8px 14px",
-              background: "#2563eb",
-              color: "white",
-              border: "none",
-              borderRadius: 6,
-              cursor: "pointer",
-              fontSize: 14,
-            }}
-          >
+          <button onClick={() => setShowModal(true)} className="btn-primary">
             + Add Record
           </button>
         </div>
@@ -541,8 +487,8 @@ export default function PerformancePage() {
                     <td style={{ padding: "10px 12px" }}>
                       <span
                         style={{
-                          background: "#dbeafe",
-                          color: "#1d4ed8",
+                          background: "#f4f4f5",
+                          color: "#18181b",
                           padding: "2px 8px",
                           borderRadius: 4,
                           fontSize: 11,
@@ -563,31 +509,16 @@ export default function PerformancePage() {
                     <td style={{ padding: "10px 12px" }}>{pct(r.conversionRate)}</td>
                     <td style={{ padding: "10px 12px" }}>{roasFmt(r.roas)}</td>
                     <td style={{ padding: "10px 12px" }}>
-                      <div style={{ display: "flex", gap: 6 }}>
+                      <div className="flex gap-1.5">
                         <button
                           onClick={() => setEditRecord(r)}
-                          style={{
-                            padding: "4px 8px",
-                            border: "1px solid #d1d5db",
-                            borderRadius: 4,
-                            background: "white",
-                            cursor: "pointer",
-                            fontSize: 12,
-                          }}
+                          className="btn-secondary btn-sm"
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => handleDelete(r.id)}
-                          style={{
-                            padding: "4px 8px",
-                            border: "1px solid #fca5a5",
-                            borderRadius: 4,
-                            background: "white",
-                            color: "#dc2626",
-                            cursor: "pointer",
-                            fontSize: 12,
-                          }}
+                          className="btn-danger btn-sm"
                         >
                           Delete
                         </button>
@@ -738,8 +669,8 @@ function TopTable({
             <td style={{ padding: "8px 12px" }}>
               <span
                 style={{
-                  background: "#dbeafe",
-                  color: "#1d4ed8",
+                  background: "#f4f4f5",
+                  color: "#18181b",
                   padding: "2px 8px",
                   borderRadius: 4,
                   fontSize: 11,
@@ -871,8 +802,8 @@ function SummaryCard({ summary }: { summary: PerformanceSummary }) {
             <span
               style={{
                 marginLeft: 8,
-                background: "#dbeafe",
-                color: "#1d4ed8",
+                background: "#f4f4f5",
+                color: "#18181b",
                 padding: "2px 8px",
                 borderRadius: 4,
                 fontSize: 11,
@@ -892,7 +823,7 @@ function SummaryCard({ summary }: { summary: PerformanceSummary }) {
         <RecommendationList label="Recommended Hooks" items={summary.recommendedHooks} color="#16a34a" />
       )}
       {summary.recommendedAngles.length > 0 && (
-        <RecommendationList label="Recommended Angles" items={summary.recommendedAngles} color="#2563eb" />
+        <RecommendationList label="Recommended Angles" items={summary.recommendedAngles} color="#18181b" />
       )}
       {summary.recommendedCTAs.length > 0 && (
         <RecommendationList label="Recommended CTAs" items={summary.recommendedCTAs} color="#7c3aed" />

@@ -43,7 +43,7 @@ export default function CalendarsPage() {
         </div>
         <Link
           href="/calendars/new"
-          className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
+          className="btn-primary"
         >
           New Calendar
         </Link>
@@ -55,7 +55,7 @@ export default function CalendarsPage() {
       {!loading && !error && calendars.length === 0 && (
         <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-lg">
           <p className="text-gray-400 mb-4">No calendars yet</p>
-          <Link href="/calendars/new" className="text-blue-600 hover:underline text-sm">
+          <Link href="/calendars/new" className="text-zinc-700 hover:text-zinc-900 hover:underline text-sm">
             Create your first content calendar
           </Link>
         </div>
@@ -84,7 +84,7 @@ export default function CalendarsPage() {
                 <div className="flex items-center gap-2 ml-4">
                   <Link
                     href={`/calendars/${cal.id}`}
-                    className="text-sm text-blue-600 hover:underline"
+                    className="text-sm text-zinc-700 hover:text-zinc-900 hover:underline"
                   >
                     View
                   </Link>

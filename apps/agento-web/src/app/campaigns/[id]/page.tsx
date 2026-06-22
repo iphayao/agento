@@ -343,7 +343,7 @@ function StepRow({
             status === "COMPLETED"
               ? "text-gray-800"
               : status === "RUNNING"
-              ? "text-blue-700 font-medium"
+              ? "text-zinc-900 font-medium"
               : status === "FAILED"
               ? "text-red-700"
               : "text-gray-400"
@@ -524,11 +524,11 @@ export default function CampaignDetailPage() {
       <AgentWorkflowPanel campaignId={id} onContentCreated={loadContent} />
 
       {/* Quick Generate (Phase 1) */}
-      <div className="card mb-8 border-blue-200 bg-blue-50">
-        <h2 className="text-lg font-semibold text-blue-900 mb-4">Quick Generate (Single Step)</h2>
+      <div className="card mb-8 border-zinc-200 bg-zinc-50">
+        <h2 className="text-lg font-semibold text-zinc-900 mb-4">Quick Generate (Single Step)</h2>
         <div className="flex flex-wrap gap-3 items-end">
           <div>
-            <label className="form-label text-blue-800">Content Type</label>
+            <label className="form-label text-zinc-700">Content Type</label>
             <select
               className="form-input w-56"
               value={contentType}
@@ -543,7 +543,7 @@ export default function CampaignDetailPage() {
             </select>
           </div>
           <div className="flex-1 min-w-48">
-            <label className="form-label text-blue-800">Additional Context (optional)</label>
+            <label className="form-label text-zinc-700">Additional Context (optional)</label>
             <input
               className="form-input"
               value={additionalContext}
@@ -629,7 +629,7 @@ export default function CampaignDetailPage() {
               )}
               {content.hook && (
                 <div className="mb-2">
-                  <span className="text-xs font-medium text-blue-600 uppercase tracking-wide">Hook</span>
+                  <span className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Hook</span>
                   <p className="text-gray-800 text-sm mt-1">{content.hook}</p>
                 </div>
               )}
@@ -648,7 +648,7 @@ export default function CampaignDetailPage() {
               {content.hashtags && content.hashtags.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1">
                   {content.hashtags.map((tag, i) => (
-                    <span key={i} className="text-xs text-blue-600 font-medium">
+                    <span key={i} className="text-xs text-zinc-600 font-medium">
                       {tag}
                     </span>
                   ))}

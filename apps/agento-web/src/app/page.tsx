@@ -69,7 +69,7 @@ export default function DashboardPage() {
           {statCards.map((card) => (
             <Link key={card.label} href={card.href}>
               <div className="card hover:shadow-md transition-shadow cursor-pointer">
-                <div className="text-3xl font-bold text-blue-700">{card.value}</div>
+                <div className="text-3xl font-bold text-zinc-900">{card.value}</div>
                 <div className="text-sm text-gray-600 mt-1">{card.label}</div>
               </div>
             </Link>
@@ -100,9 +100,9 @@ export default function DashboardPage() {
 
       {/* Getting started */}
       {stats && stats.brands === 0 && (
-        <div className="card border-blue-200 bg-blue-50">
-          <h3 className="font-semibold text-blue-900 mb-2">Get Started</h3>
-          <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+        <div className="card border-zinc-200 bg-zinc-50">
+          <h3 className="font-semibold text-zinc-900 mb-2">Get Started</h3>
+          <ol className="text-sm text-zinc-700 space-y-1 list-decimal list-inside">
             <li>
               <Link href="/brand/new" className="underline">Create a brand profile</Link> with SoClean brand details
             </li>

@@ -39,7 +39,7 @@ export default function CsvImportPage() {
       <div style={{ marginBottom: 20 }}>
         <Link
           href="/performance"
-          style={{ color: "#2563eb", fontSize: 13, textDecoration: "none" }}
+          style={{ color: "#3f3f46", fontSize: 13, textDecoration: "none" }}
         >
           ← Back to Performance
         </Link>
@@ -104,7 +104,7 @@ export default function CsvImportPage() {
                 ["notes", "string", "Optional — free text"],
               ].map(([col, type, note]) => (
                 <tr key={col} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                  <td style={{ padding: "5px 10px", fontFamily: "monospace", color: "#1d4ed8" }}>{col}</td>
+                  <td style={{ padding: "5px 10px", fontFamily: "monospace", color: "#18181b" }}>{col}</td>
                   <td style={{ padding: "5px 10px", color: "#6b7280" }}>{type}</td>
                   <td style={{ padding: "5px 10px", color: "#374151" }}>{note}</td>
                 </tr>
@@ -193,34 +193,15 @@ export default function CsvImportPage() {
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 8 }}>
+      <div className="flex gap-2">
         <button
           onClick={handleImport}
           disabled={!file || importing}
-          style={{
-            padding: "10px 20px",
-            background: "#2563eb",
-            color: "white",
-            border: "none",
-            borderRadius: 6,
-            cursor: !file || importing ? "not-allowed" : "pointer",
-            opacity: !file || importing ? 0.6 : 1,
-            fontWeight: 600,
-          }}
+          className="btn-primary"
         >
           {importing ? "Importing…" : "Import"}
         </button>
-        <Link
-          href="/performance"
-          style={{
-            padding: "10px 20px",
-            border: "1px solid #d1d5db",
-            borderRadius: 6,
-            color: "#374151",
-            textDecoration: "none",
-            display: "inline-block",
-          }}
-        >
+        <Link href="/performance" className="btn-secondary">
           Cancel
         </Link>
       </div>

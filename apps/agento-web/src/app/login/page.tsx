@@ -26,94 +26,85 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      background: "#f5f5f5",
-    }}>
-      <div style={{
-        background: "white",
-        padding: "2rem",
-        borderRadius: "8px",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-        width: "100%",
-        maxWidth: "360px",
-      }}>
-        <h1 style={{ textAlign: "center", marginBottom: "0.5rem", fontSize: "1.5rem" }}>
-          Agento
-        </h1>
-        <p style={{ textAlign: "center", color: "#666", marginBottom: "1.5rem", fontSize: "0.875rem" }}>
-          BN Paper Content System
+    <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-6">
+      <div className="w-full max-w-sm">
+        {/* Logo + title */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-10 h-10 bg-white rounded-xl mb-5">
+            <svg className="w-5 h-5 text-zinc-900" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <h1 className="text-xl font-semibold text-white mb-1">Welcome back</h1>
+          <p className="text-zinc-500 text-sm">Sign in to Agento</p>
+        </div>
+
+        {/* Form card */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm text-zinc-400 mb-1.5">
+                Username
+              </label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                autoComplete="username"
+                autoFocus
+                placeholder="Enter your username"
+                className="w-full px-3 py-2.5 bg-zinc-950 border border-zinc-700 rounded-lg text-white text-sm placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-zinc-500 focus:border-zinc-500 transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-zinc-400 mb-1.5">
+                Password
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                placeholder="Enter your password"
+                className="w-full px-3 py-2.5 bg-zinc-950 border border-zinc-700 rounded-lg text-white text-sm placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-zinc-500 focus:border-zinc-500 transition-all"
+              />
+            </div>
+
+            {error && (
+              <div className="flex items-start gap-2.5 bg-red-950/60 border border-red-900/60 text-red-400 px-3 py-2.5 rounded-lg text-sm">
+                <svg className="w-4 h-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2.5 bg-white text-zinc-900 text-sm font-semibold rounded-lg hover:bg-zinc-100 active:bg-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Signing in…
+                </>
+              ) : (
+                "Continue →"
+              )}
+            </button>
+          </form>
+        </div>
+
+        <p className="text-zinc-700 text-xs text-center mt-6">
+          BN Paper Content Management System v1.0
         </p>
-
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", marginBottom: "0.25rem", fontSize: "0.875rem" }}>
-              Username
-            </label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              autoComplete="username"
-              style={{
-                width: "100%",
-                padding: "0.5rem",
-                border: "1px solid #ddd",
-                borderRadius: "4px",
-                fontSize: "1rem",
-                boxSizing: "border-box",
-              }}
-            />
-          </div>
-
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", marginBottom: "0.25rem", fontSize: "0.875rem" }}>
-              Password
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-              style={{
-                width: "100%",
-                padding: "0.5rem",
-                border: "1px solid #ddd",
-                borderRadius: "4px",
-                fontSize: "1rem",
-                boxSizing: "border-box",
-              }}
-            />
-          </div>
-
-          {error && (
-            <p style={{ color: "#dc2626", fontSize: "0.875rem", marginBottom: "1rem" }}>
-              {error}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: "100%",
-              padding: "0.625rem",
-              background: loading ? "#9ca3af" : "#2563eb",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              fontSize: "1rem",
-              cursor: loading ? "not-allowed" : "pointer",
-            }}
-          >
-            {loading ? "Signing in…" : "Sign in"}
-          </button>
-        </form>
       </div>
     </div>
   );
