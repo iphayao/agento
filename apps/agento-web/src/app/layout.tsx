@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { getUsername, logout } from "@/lib/auth";
 import "./globals.css";
+
+type Theme = "light" | "dark" | "system";
 
 const navLinks = [
   { href: "/", label: "Dashboard", icon: "grid" },
@@ -67,37 +69,104 @@ const iconMap: { [key: string]: JSX.Element } = {
   ),
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+// ── Small theme icons (for inline button group) ───────────────────────────────
+
+const SunIconSm = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+  </svg>
+);
+
+const MoonIconSm = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+  </svg>
+);
+
+const MonitorIconSm = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+  </svg>
+);
+
+// ── Theme helper ──────────────────────────────────────────────────────────────
+
+function applyTheme(t: Theme) {
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const isDark = t === "dark" || (t === "system" && prefersDark);
+  document.documentElement.classList.toggle("dark", isDark);
+}
+
+// ── Layout ────────────────────────────────────────────────────────────────────
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isLoginPage = pathname === "/login";
+
   const [username, setUsername] = useState<string | null>(null);
+  const [email] = useState("phayaob@gmail.com");
   const [collapsed, setCollapsed] = useState(false);
-  const [dark, setDark] = useState(true);
+  const [theme, setTheme] = useState<Theme>("dark");
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [menuPos, setMenuPos] = useState({ bottom: 0, left: 0, width: 0 });
+  const userBtnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     setUsername(getUsername());
-    const saved = localStorage.getItem("theme");
-    const isDark = saved ? saved === "dark" : true;
-    setDark(isDark);
-    document.documentElement.classList.toggle("dark", isDark);
+    const saved = (localStorage.getItem("theme") as Theme) || "dark";
+    setTheme(saved);
+    applyTheme(saved);
   }, []);
 
-  function toggleTheme() {
-    const next = !dark;
-    setDark(next);
-    localStorage.setItem("theme", next ? "dark" : "light");
-    document.documentElement.classList.toggle("dark", next);
+  // Follow OS changes when system theme is active
+  useEffect(() => {
+    if (theme !== "system") return;
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = (e: MediaQueryListEvent) => {
+      document.documentElement.classList.toggle("dark", e.matches);
+    };
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, [theme]);
+
+  function openUserMenu() {
+    if (userBtnRef.current) {
+      const rect = userBtnRef.current.getBoundingClientRect();
+      setMenuPos({
+        bottom: window.innerHeight - rect.top + 6,
+        left: rect.left,
+        width: Math.max(rect.width, 220),
+      });
+    }
+    setShowUserMenu(true);
+  }
+
+  function changeTheme(t: Theme) {
+    setTheme(t);
+    localStorage.setItem("theme", t);
+    applyTheme(t);
+  }
+
+  function handleLogout() {
+    setShowUserMenu(false);
+    logout();
   }
 
   return (
     <html lang="th">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `
+          (function(){
+            var t=localStorage.getItem('theme')||'dark';
+            var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);
+            if(d)document.documentElement.classList.add('dark');
+          })();
+        `}} />
+      </head>
       <body>
         <div className="min-h-screen flex">
-          {/* Sidebar */}
+
+          {/* ── Sidebar ──────────────────────────────────────────────────────── */}
           {!isLoginPage && (
             <aside className={`${collapsed ? "w-16" : "w-64"} bg-white border-r border-zinc-200 dark:bg-zinc-900 dark:border-zinc-800 flex flex-col shrink-0 transition-[width] duration-200 overflow-hidden`}>
 
@@ -118,15 +187,14 @@ export default function RootLayout({
                 )}
                 <button
                   onClick={() => setCollapsed(!collapsed)}
-                  className="p-1.5 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 dark:text-zinc-500 dark:hover:text-zinc-200 dark:hover:bg-zinc-800 rounded-md transition-colors shrink-0"
                   title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                  className="p-1.5 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 dark:text-zinc-500 dark:hover:text-zinc-200 dark:hover:bg-zinc-800 rounded-md transition-colors shrink-0"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    {collapsed ? (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
-                    ) : (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
-                    )}
+                    {collapsed
+                      ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
+                      : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
+                    }
                   </svg>
                 </button>
               </div>
@@ -134,9 +202,7 @@ export default function RootLayout({
               {/* Nav links */}
               <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
                 {navLinks.map((link) => {
-                  const isActive = link.href === "/"
-                    ? pathname === "/"
-                    : pathname.startsWith(link.href);
+                  const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
                   return (
                     <Link
                       key={link.href}
@@ -161,61 +227,94 @@ export default function RootLayout({
                 })}
               </nav>
 
-              {/* Footer */}
-              <div className="px-2 pb-3 pt-2 border-t border-zinc-200 dark:border-zinc-800 space-y-0.5 shrink-0">
-                {/* Theme toggle */}
+              {/* User button — opens popover */}
+              <div className="px-2 pb-3 pt-2 border-t border-zinc-200 dark:border-zinc-800 shrink-0">
                 <button
-                  onClick={toggleTheme}
-                  title={dark ? "Switch to light mode" : "Switch to dark mode"}
-                  className={`w-full flex items-center ${collapsed ? "justify-center px-2" : "gap-3 px-3"} py-2 text-sm rounded-lg text-zinc-500 hover:bg-zinc-50 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-100 transition-all duration-100`}
+                  ref={userBtnRef}
+                  onClick={openUserMenu}
+                  title={collapsed ? (username ?? "Account") : undefined}
+                  className={`w-full flex items-center ${collapsed ? "justify-center px-2" : "gap-2.5 px-2.5"} py-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors group`}
                 >
-                  {dark ? (
-                    /* Sun — switch to light */
-                    <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                  ) : (
-                    /* Moon — switch to dark */
-                    <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                  <div className="w-7 h-7 rounded-full bg-zinc-800 dark:bg-zinc-200 flex items-center justify-center shrink-0">
+                    <span className="text-xs text-white dark:text-zinc-900 font-semibold">
+                      {username ? username.charAt(0).toUpperCase() : "U"}
+                    </span>
+                  </div>
+                  {!collapsed && (
+                    <div className="flex-1 min-w-0 text-left">
+                      <div className="text-sm font-medium text-zinc-900 dark:text-white truncate leading-tight">{username ?? ""}</div>
+                      <div className="text-xs text-zinc-400 dark:text-zinc-500 truncate leading-tight">{email}</div>
+                    </div>
+                  )}
+                  {!collapsed && (
+                    <svg className="w-4 h-4 text-zinc-400 dark:text-zinc-500 shrink-0 group-hover:text-zinc-600 dark:group-hover:text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
                     </svg>
                   )}
-                  {!collapsed && (dark ? "Light mode" : "Dark mode")}
-                </button>
-
-                {/* User */}
-                {username && (
-                  <div className={`flex items-center ${collapsed ? "justify-center px-2" : "gap-3 px-3"} py-2 rounded-lg`}>
-                    <div
-                      className="w-6 h-6 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center shrink-0"
-                      title={collapsed ? username : undefined}
-                    >
-                      <span className="text-xs text-zinc-700 dark:text-zinc-300 font-semibold">{username.charAt(0).toUpperCase()}</span>
-                    </div>
-                    {!collapsed && <span className="text-sm text-zinc-500 dark:text-zinc-400 truncate">{username}</span>}
-                  </div>
-                )}
-
-                {/* Sign out */}
-                <button
-                  onClick={logout}
-                  title={collapsed ? "Sign out" : undefined}
-                  className={`w-full flex items-center ${collapsed ? "justify-center px-2" : "gap-3 px-3"} py-2 text-sm rounded-lg text-zinc-500 hover:bg-zinc-50 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-100 transition-all duration-100`}
-                >
-                  <svg className="w-5 h-5 shrink-0 text-zinc-400 dark:text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                  {!collapsed && "Sign out"}
                 </button>
               </div>
             </aside>
           )}
 
           {/* Main content */}
-          <main className="flex-1 overflow-auto">
-            {children}
-          </main>
+          <main className="flex-1 overflow-auto">{children}</main>
         </div>
+
+        {/* ── User popover ─────────────────────────────────────────────────── */}
+        {showUserMenu && (
+          <div
+            className="fixed inset-0 z-50"
+            onClick={() => setShowUserMenu(false)}
+          >
+            <div
+              className="absolute bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-2xl shadow-xl overflow-hidden"
+              style={{ bottom: menuPos.bottom, left: menuPos.left, width: menuPos.width }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Email + theme row */}
+              <div className="px-4 pt-4 pb-3">
+                <div className="text-sm text-zinc-600 dark:text-zinc-300 font-medium mb-3 truncate">{email}</div>
+
+                {/* Theme toggle group */}
+                <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl p-1">
+                  {(
+                    [
+                      { value: "system" as Theme, icon: <MonitorIconSm />, label: "System" },
+                      { value: "light"  as Theme, icon: <SunIconSm />,     label: "Light" },
+                      { value: "dark"   as Theme, icon: <MoonIconSm />,    label: "Dark" },
+                    ] as const
+                  ).map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => changeTheme(opt.value)}
+                      title={opt.label}
+                      className={`flex-1 flex items-center justify-center py-1.5 rounded-lg transition-all text-sm ${
+                        theme === opt.value
+                          ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm"
+                          : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300"
+                      }`}
+                    >
+                      {opt.icon}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
+
+              {/* Log out */}
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-4 py-3 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/70 transition-colors"
+              >
+                <svg className="w-4 h-4 text-zinc-400 dark:text-zinc-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Log out
+              </button>
+            </div>
+          </div>
+        )}
       </body>
     </html>
   );
