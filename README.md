@@ -50,6 +50,44 @@ docker compose up -d
 # Then start each app — see docs/local-dev.md
 ```
 
+## How to Use
+
+### 1. Set Up Brand & Products
+- Go to **Brand Profile** — add the SoClean brand info (positioning, tone, target channels)
+- Go to **Products** — add your facial tissue product details (pack size, features, pricing)
+
+### 2. Create a Campaign
+- Go to **Campaigns** — create a campaign with a goal, target channel, and date range
+- A campaign groups all content generated for one marketing push
+
+### 3. Generate Content
+- Inside a campaign, trigger the **AI workflow** — runs a 7-step LangGraph agent pipeline:
+  `brand_strategist → copywriter → hashtag_expert → claim_checker → formatter`
+- All content is saved as **DRAFT** and never published automatically
+
+### 4. Review & Approve Content
+- Go to **Content Review** — see all drafts across all campaigns
+- Approve or reject each piece before it moves forward
+
+### 5. Plan a Content Calendar
+- Go to **Content Calendar** — create a calendar for a time period
+- Ask the AI to plan a posting schedule, then batch-generate content for each slot
+- Approve or reject individual calendar items
+
+### 6. Learn from Performance
+- Go to **Performance** — import CSV data exported from TikTok Shop, Shopee, or Lazada
+- The AI generates insights that feed back into the **Knowledge Base** to improve future content
+
+### 7. Export Approved Content
+- Go to **Export** — download approved content as CSV for manual publishing
+- Supported formats: TikTok, Shopee, Lazada, Facebook, full export
+
+### Knowledge Base
+The **Knowledge Base** stores brand memory — product facts, past learnings, and RAG context.
+The AI agent reads from it automatically during every content generation run.
+
+---
+
 ## Documentation
 
 - [Architecture](docs/architecture.md)
