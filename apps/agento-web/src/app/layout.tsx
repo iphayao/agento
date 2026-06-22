@@ -75,6 +75,7 @@ export default function RootLayout({
   const pathname = usePathname();
   const isLoginPage = pathname === "/login";
   const [username, setUsername] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
     setUsername(getUsername());
@@ -86,23 +87,33 @@ export default function RootLayout({
         <div className="min-h-screen flex">
           {/* Sidebar - hidden on login page */}
           {!isLoginPage && (
-            <aside className="w-64 bg-zinc-900 border-r border-zinc-800 flex flex-col shrink-0">
+            <aside className={`${collapsed ? "w-16" : "w-64"} bg-zinc-900 border-r border-zinc-800 flex flex-col shrink-0 transition-[width] duration-200 overflow-hidden`}>
               {/* Workspace header */}
-              <div className="flex items-center justify-between px-4 h-14 border-b border-zinc-800 shrink-0">
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className="w-5 h-5 bg-white rounded flex items-center justify-center shrink-0">
-                    <svg className="w-3 h-3 text-zinc-900" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+              <div className={`flex items-center h-14 border-b border-zinc-800 shrink-0 ${collapsed ? "justify-center" : "justify-between px-3"}`}>
+                {!collapsed && (
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-5 h-5 bg-white rounded flex items-center justify-center shrink-0">
+                      <svg className="w-3 h-3 text-zinc-900" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </div>
+                    <span className="text-sm font-semibold text-white truncate">Agento</span>
+                    <svg className="w-3.5 h-3.5 text-zinc-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </div>
-                  <span className="text-sm font-semibold text-white truncate">Agento</span>
-                  <svg className="w-3.5 h-3.5 text-zinc-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-                <button className="p-1.5 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 rounded-md transition-colors shrink-0">
+                )}
+                <button
+                  onClick={() => setCollapsed(!collapsed)}
+                  className="p-1.5 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 rounded-md transition-colors shrink-0"
+                  title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h10M4 18h16" />
+                    {collapsed ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
+                    )}
                   </svg>
                 </button>
               </div>
@@ -117,7 +128,8 @@ export default function RootLayout({
                     <Link
                       key={link.href}
                       href={link.href}
-                      className={`group flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-100 ${
+                      title={collapsed ? link.label : undefined}
+                      className={`group flex items-center ${collapsed ? "justify-center px-2" : "gap-3 px-3"} py-2 text-sm rounded-lg transition-all duration-100 ${
                         isActive
                           ? "bg-zinc-800 text-white"
                           : "text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-100"
@@ -126,7 +138,7 @@ export default function RootLayout({
                       <span className={`flex-shrink-0 transition-colors ${isActive ? "text-zinc-200" : "text-zinc-500 group-hover:text-zinc-300"}`}>
                         {iconMap[link.icon]}
                       </span>
-                      {link.label}
+                      {!collapsed && link.label}
                     </Link>
                   );
                 })}
@@ -135,21 +147,25 @@ export default function RootLayout({
               {/* User + logout footer */}
               <div className="px-2 pb-3 pt-2 border-t border-zinc-800 space-y-0.5 shrink-0">
                 {username && (
-                  <div className="flex items-center gap-3 px-3 py-2 rounded-lg">
-                    <div className="w-6 h-6 rounded-full bg-zinc-700 flex items-center justify-center shrink-0">
+                  <div className={`flex items-center ${collapsed ? "justify-center px-2" : "gap-3 px-3"} py-2 rounded-lg`}>
+                    <div
+                      className="w-6 h-6 rounded-full bg-zinc-700 flex items-center justify-center shrink-0"
+                      title={collapsed ? username : undefined}
+                    >
                       <span className="text-xs text-zinc-300 font-semibold">{username.charAt(0).toUpperCase()}</span>
                     </div>
-                    <span className="text-sm text-zinc-400 truncate">{username}</span>
+                    {!collapsed && <span className="text-sm text-zinc-400 truncate">{username}</span>}
                   </div>
                 )}
                 <button
                   onClick={logout}
-                  className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-100 transition-all duration-100"
+                  title={collapsed ? "Sign out" : undefined}
+                  className={`w-full flex items-center ${collapsed ? "justify-center px-2" : "gap-3 px-3"} py-2 text-sm rounded-lg text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-100 transition-all duration-100`}
                 >
-                  <svg className="w-5 h-5 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-zinc-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                   </svg>
-                  Sign out
+                  {!collapsed && "Sign out"}
                 </button>
               </div>
             </aside>
