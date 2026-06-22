@@ -76,36 +76,49 @@ export default function RootLayout({
   const isLoginPage = pathname === "/login";
   const [username, setUsername] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
+  const [dark, setDark] = useState(true);
 
   useEffect(() => {
     setUsername(getUsername());
+    const saved = localStorage.getItem("theme");
+    const isDark = saved ? saved === "dark" : true;
+    setDark(isDark);
+    document.documentElement.classList.toggle("dark", isDark);
   }, []);
+
+  function toggleTheme() {
+    const next = !dark;
+    setDark(next);
+    localStorage.setItem("theme", next ? "dark" : "light");
+    document.documentElement.classList.toggle("dark", next);
+  }
 
   return (
     <html lang="th">
       <body>
         <div className="min-h-screen flex">
-          {/* Sidebar - hidden on login page */}
+          {/* Sidebar */}
           {!isLoginPage && (
-            <aside className={`${collapsed ? "w-16" : "w-64"} bg-zinc-900 border-r border-zinc-800 flex flex-col shrink-0 transition-[width] duration-200 overflow-hidden`}>
+            <aside className={`${collapsed ? "w-16" : "w-64"} bg-white border-r border-zinc-200 dark:bg-zinc-900 dark:border-zinc-800 flex flex-col shrink-0 transition-[width] duration-200 overflow-hidden`}>
+
               {/* Workspace header */}
-              <div className={`flex items-center h-14 border-b border-zinc-800 shrink-0 ${collapsed ? "justify-center" : "justify-between px-3"}`}>
+              <div className={`flex items-center h-14 border-b border-zinc-200 dark:border-zinc-800 shrink-0 ${collapsed ? "justify-center" : "justify-between px-3"}`}>
                 {!collapsed && (
                   <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-5 h-5 bg-white rounded flex items-center justify-center shrink-0">
-                      <svg className="w-3 h-3 text-zinc-900" fill="currentColor" viewBox="0 0 24 24">
+                    <div className="w-5 h-5 bg-zinc-900 dark:bg-white rounded flex items-center justify-center shrink-0">
+                      <svg className="w-3 h-3 text-white dark:text-zinc-900" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M13 10V3L4 14h7v7l9-11h-7z" />
                       </svg>
                     </div>
-                    <span className="text-sm font-semibold text-white truncate">Agento</span>
-                    <svg className="w-3.5 h-3.5 text-zinc-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <span className="text-sm font-semibold text-zinc-900 dark:text-white truncate">Agento</span>
+                    <svg className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </div>
                 )}
                 <button
                   onClick={() => setCollapsed(!collapsed)}
-                  className="p-1.5 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 rounded-md transition-colors shrink-0"
+                  className="p-1.5 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 dark:text-zinc-500 dark:hover:text-zinc-200 dark:hover:bg-zinc-800 rounded-md transition-colors shrink-0"
                   title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -131,11 +144,15 @@ export default function RootLayout({
                       title={collapsed ? link.label : undefined}
                       className={`group flex items-center ${collapsed ? "justify-center px-2" : "gap-3 px-3"} py-2 text-sm rounded-lg transition-all duration-100 ${
                         isActive
-                          ? "bg-zinc-800 text-white"
-                          : "text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-100"
+                          ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-white"
+                          : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-100"
                       }`}
                     >
-                      <span className={`flex-shrink-0 transition-colors ${isActive ? "text-zinc-200" : "text-zinc-500 group-hover:text-zinc-300"}`}>
+                      <span className={`flex-shrink-0 transition-colors ${
+                        isActive
+                          ? "text-zinc-700 dark:text-zinc-200"
+                          : "text-zinc-400 group-hover:text-zinc-600 dark:text-zinc-500 dark:group-hover:text-zinc-300"
+                      }`}>
                         {iconMap[link.icon]}
                       </span>
                       {!collapsed && link.label}
@@ -144,25 +161,48 @@ export default function RootLayout({
                 })}
               </nav>
 
-              {/* User + logout footer */}
-              <div className="px-2 pb-3 pt-2 border-t border-zinc-800 space-y-0.5 shrink-0">
+              {/* Footer */}
+              <div className="px-2 pb-3 pt-2 border-t border-zinc-200 dark:border-zinc-800 space-y-0.5 shrink-0">
+                {/* Theme toggle */}
+                <button
+                  onClick={toggleTheme}
+                  title={dark ? "Switch to light mode" : "Switch to dark mode"}
+                  className={`w-full flex items-center ${collapsed ? "justify-center px-2" : "gap-3 px-3"} py-2 text-sm rounded-lg text-zinc-500 hover:bg-zinc-50 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-100 transition-all duration-100`}
+                >
+                  {dark ? (
+                    /* Sun — switch to light */
+                    <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                  ) : (
+                    /* Moon — switch to dark */
+                    <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                  )}
+                  {!collapsed && (dark ? "Light mode" : "Dark mode")}
+                </button>
+
+                {/* User */}
                 {username && (
                   <div className={`flex items-center ${collapsed ? "justify-center px-2" : "gap-3 px-3"} py-2 rounded-lg`}>
                     <div
-                      className="w-6 h-6 rounded-full bg-zinc-700 flex items-center justify-center shrink-0"
+                      className="w-6 h-6 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center shrink-0"
                       title={collapsed ? username : undefined}
                     >
-                      <span className="text-xs text-zinc-300 font-semibold">{username.charAt(0).toUpperCase()}</span>
+                      <span className="text-xs text-zinc-700 dark:text-zinc-300 font-semibold">{username.charAt(0).toUpperCase()}</span>
                     </div>
-                    {!collapsed && <span className="text-sm text-zinc-400 truncate">{username}</span>}
+                    {!collapsed && <span className="text-sm text-zinc-500 dark:text-zinc-400 truncate">{username}</span>}
                   </div>
                 )}
+
+                {/* Sign out */}
                 <button
                   onClick={logout}
                   title={collapsed ? "Sign out" : undefined}
-                  className={`w-full flex items-center ${collapsed ? "justify-center px-2" : "gap-3 px-3"} py-2 text-sm rounded-lg text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-100 transition-all duration-100`}
+                  className={`w-full flex items-center ${collapsed ? "justify-center px-2" : "gap-3 px-3"} py-2 text-sm rounded-lg text-zinc-500 hover:bg-zinc-50 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-100 transition-all duration-100`}
                 >
-                  <svg className="w-5 h-5 text-zinc-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 shrink-0 text-zinc-400 dark:text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                   </svg>
                   {!collapsed && "Sign out"}
