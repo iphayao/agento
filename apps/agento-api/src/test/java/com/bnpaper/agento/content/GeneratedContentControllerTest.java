@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.bnpaper.agento.common.exception.AiProviderException;
 import com.bnpaper.agento.common.exception.ResourceNotFoundException;
 import com.bnpaper.agento.security.SecurityConfig;
-import com.bnpaper.agento.security.PasswordEncoderConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -25,7 +24,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(GeneratedContentController.class)
-@Import({SecurityConfig.class, PasswordEncoderConfig.class})
+@Import(SecurityConfig.class)
 @WithMockUser(roles = "ADMIN")
 class GeneratedContentControllerTest {
 

@@ -35,15 +35,9 @@ import type {
 } from "@/types";
 
 // All API calls go through the Next.js proxy at /api/[...path].
-// The proxy forwards the Authorization header to Spring Boot for JWT validation.
+// The proxy attaches the Keycloak access token server-side — the browser never handles it.
 // LLM/AI keys are NEVER sent to the browser.
 const BASE_URL = "/api";
-
-function getAuthHeaders(): Record<string, string> {
-  if (typeof window === "undefined") return {};
-  const token = localStorage.getItem("agento_jwt");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
 
 async function apiFetch<T>(
   path: string,
@@ -51,7 +45,6 @@ async function apiFetch<T>(
 ): Promise<ApiResponse<T>> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...getAuthHeaders(),
     ...(options?.headers as Record<string, string>),
   };
   const res = await fetch(`${BASE_URL}${path}`, {
@@ -59,9 +52,8 @@ async function apiFetch<T>(
     headers,
   });
 
-  // JWT expired or invalid → redirect to login
-  if (res.status === 401 && typeof window !== "undefined" && !path.includes("/auth/")) {
-    localStorage.removeItem("agento_jwt");
+  // Session expired or token rejected → redirect to login
+  if (res.status === 401 && typeof window !== "undefined") {
     window.location.href = "/login";
     throw new Error("Session expired — please log in again");
   }

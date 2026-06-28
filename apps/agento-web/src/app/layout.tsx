@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { getUsername, logout } from "@/lib/auth";
+import { SessionProvider, signOut, useSession } from "next-auth/react";
 import "./globals.css";
 
 type Theme = "light" | "dark" | "system";
@@ -99,12 +99,14 @@ function applyTheme(t: Theme) {
 
 // ── Layout ────────────────────────────────────────────────────────────────────
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+// AppContent uses useSession and must live inside SessionProvider
+function AppContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isLoginPage = pathname === "/login";
 
-  const [username, setUsername] = useState<string | null>(null);
-  const [email] = useState("phayaob@gmail.com");
+  const { data: session } = useSession();
+  const username = session?.user?.name ?? null;
+  const email = session?.user?.email ?? null;
   const [collapsed, setCollapsed] = useState(false);
   const [theme, setTheme] = useState<Theme>("dark");
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -112,7 +114,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const userBtnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    setUsername(getUsername());
     const saved = (localStorage.getItem("theme") as Theme) || "dark";
     setTheme(saved);
     applyTheme(saved);
@@ -149,22 +150,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   function handleLogout() {
     setShowUserMenu(false);
-    logout();
+    signOut({ callbackUrl: "/login" });
   }
 
   return (
-    <html lang="th">
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: `
-          (function(){
-            var t=localStorage.getItem('theme')||'dark';
-            var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);
-            if(d)document.documentElement.classList.add('dark');
-          })();
-        `}} />
-      </head>
-      <body>
-        <div className="min-h-screen flex">
+    <>
+      <div className="min-h-screen flex">
 
           {/* ── Sidebar ──────────────────────────────────────────────────────── */}
           {!isLoginPage && (
@@ -315,6 +306,26 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </div>
         )}
+    </>
+  );
+}
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="th">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `
+          (function(){
+            var t=localStorage.getItem('theme')||'dark';
+            var d=t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);
+            if(d)document.documentElement.classList.add('dark');
+          })();
+        `}} />
+      </head>
+      <body>
+        <SessionProvider>
+          <AppContent>{children}</AppContent>
+        </SessionProvider>
       </body>
     </html>
   );
