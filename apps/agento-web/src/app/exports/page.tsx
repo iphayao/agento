@@ -57,7 +57,9 @@ export default function ExportsPage() {
       .finally(() => setLoading(false));
 
     return () => {
-      pollingRef.current.forEach((timer) => clearInterval(timer));
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      const timers = pollingRef.current;
+      timers.forEach((timer) => clearInterval(timer));
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

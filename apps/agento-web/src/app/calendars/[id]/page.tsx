@@ -78,6 +78,7 @@ export default function CalendarDetailPage() {
       .finally(() => setLoading(false));
 
     return () => stopPolling();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const startPolling = () => {

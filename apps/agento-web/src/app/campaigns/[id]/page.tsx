@@ -179,7 +179,7 @@ function AgentWorkflowPanel({ campaignId, onContentCreated }: {
 
       {workflows.length === 0 && (
         <p className="text-sm text-indigo-600">
-          No workflows yet. Click "Run Agent Workflow" to start a 7-step AI content generation.
+          No workflows yet. Click &ldquo;Run Agent Workflow&rdquo; to start a 7-step AI content generation.
         </p>
       )}
 
